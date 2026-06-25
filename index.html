@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacy Forge — Everything Privacy. Offline. No Upload. No Tracking.</title>
+<meta name="description" content="Privacy Forge is an offline-first privacy toolkit. Generate passwords, clean metadata, hash files, encode text — all locally in your browser.">
+<style>
+:root {
+  --bg: #0a0e1a;
+  --surface: #111827;
+  --surface2: #1a2235;
+  --border: #1e2d45;
+  --accent: #00d4ff;
+  --accent2: #7c3aed;
+  --accent3: #10b981;
+  --text: #e2e8f0;
+  --text2: #94a3b8;
+  --text3: #64748b;
+  --radius: 14px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Background particles */
+.bg-grid {
+  position: fixed; inset: 0; z-index: 0;
+  background-image:
+    linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+}
+.bg-glow {
+  position: fixed;
+  width: 600px; height: 600px;
+  border-radius: 50%;
+  filter: blur(120px);
+  pointer-events: none;
+  z-index: 0;
+  animation: floatGlow 8s ease-in-out infinite;
+}
+.glow1 { background: rgba(0,212,255,0.06); top: -200px; left: -200px; }
+.glow2 { background: rgba(124,58,237,0.06); bottom: -200px; right: -200px; animation-delay: -4s; }
+@keyframes floatGlow {
+  0%,100% { transform: translate(0,0) scale(1); }
+  50% { transform: translate(20px,20px) scale(1.05); }
+}
+
+/* Header / Hero */
+.hero {
+  position: relative; z-index: 1;
+  text-align: center;
+  padding: clamp(48px,10vw,80px) 20px clamp(32px,6vw,48px);
+}
+.logo-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  position: relative;
+}
+.logo-shield {
+  width: 100px; height: 100px;
+  background: linear-gradient(135deg, #0a0e1a 0%, #1a2235 100%);
+  border-radius: 28px;
+  border: 2px solid rgba(0,212,255,0.3);
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+  box-shadow: 0 0 60px rgba(0,212,255,0.2), inset 0 0 40px rgba(0,212,255,0.05);
+  animation: shieldPulse 4s ease-in-out infinite;
+}
+@keyframes shieldPulse {
+  0%,100% { box-shadow: 0 0 60px rgba(0,212,255,0.2), inset 0 0 40px rgba(0,212,255,0.05); }
+  50% { box-shadow: 0 0 100px rgba(0,212,255,0.35), inset 0 0 60px rgba(0,212,255,0.1); }
+}
+.logo-shield svg { width: 56px; height: 56px; }
+.logo-ring {
+  position: absolute; inset: -12px;
+  border: 2px solid transparent;
+  border-radius: 36px;
+  background: linear-gradient(var(--bg), var(--bg)) padding-box,
+    linear-gradient(135deg, rgba(0,212,255,0.4), rgba(124,58,237,0.4), rgba(0,212,255,0.4)) border-box;
+  animation: ringRotate 6s linear infinite;
+}
+@keyframes ringRotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(16,185,129,0.1);
+  border: 1px solid rgba(16,185,129,0.3);
+  border-radius: 20px;
+  padding: 4px 14px;
+  font-size: 12px;
+  color: #10b981;
+  font-weight: 600;
+  margin-bottom: 16px;
+  letter-spacing: 0.05em;
+}
+.hero-badge::before { content: '●'; animation: blink 2s ease-in-out infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+h1 {
+  font-size: clamp(28px, 6vw, 52px);
+  font-weight: 800;
+  line-height: 1.15;
+  margin-bottom: 8px;
+  background: linear-gradient(135deg, #fff 0%, rgba(0,212,255,0.9) 50%, rgba(124,58,237,0.9) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.tagline {
+  font-size: clamp(14px, 3vw, 18px);
+  color: var(--text2);
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+.hero-desc {
+  font-size: 14px;
+  color: var(--text3);
+  max-width: 540px;
+  margin: 0 auto 32px;
+  line-height: 1.7;
+}
+.hero-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 40px;
+}
+.pill {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 12px;
+  color: var(--text2);
+  display: flex; align-items: center; gap: 6px;
+}
+.pill .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent3); }
+
+/* Search */
+.search-wrap {
+  position: relative; z-index: 1;
+  max-width: 460px; margin: 0 auto 40px;
+  padding: 0 20px;
+}
+.search-input {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 40px;
+  padding: 14px 20px 14px 48px;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.3s;
+}
+.search-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(0,212,255,0.1);
+}
+.search-icon {
+  position: absolute; left: 36px; top: 50%;
+  transform: translateY(-50%);
+  color: var(--text3); font-size: 16px;
+  pointer-events: none;
+}
+
+/* Category filters */
+.filters {
+  position: relative; z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  padding: 0 20px;
+  margin-bottom: 32px;
+}
+.filter-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.filter-btn:hover { border-color: var(--accent); color: var(--accent); }
+.filter-btn.active {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-color: transparent;
+  color: white;
+  box-shadow: 0 2px 12px rgba(0,212,255,0.3);
+}
+
+/* Tools Grid */
+.tools-section {
+  position: relative; z-index: 1;
+  max-width: 1000px; margin: 0 auto;
+  padding: 0 16px 40px;
+}
+.section-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text3);
+  margin-bottom: 16px;
+  padding-left: 4px;
+}
+.tools-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+  margin-bottom: 32px;
+}
+.tool-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  text-decoration: none;
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: all 0.25s;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+.tool-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(0,212,255,0.03) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.tool-card:hover { border-color: rgba(0,212,255,0.4); transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+.tool-card:hover::before { opacity: 1; }
+.tool-header { display: flex; align-items: flex-start; gap: 12px; }
+.tool-icon-wrap {
+  width: 46px; height: 46px; border-radius: 12px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+}
+.tool-title { font-size: 15px; font-weight: 700; margin-bottom: 3px; }
+.tool-subtitle { font-size: 12px; color: var(--text2); }
+.tool-desc { font-size: 13px; color: var(--text3); line-height: 1.5; }
+.tool-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+.tool-tag {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 10px;
+  color: var(--text3);
+  font-weight: 500;
+}
+.tool-arrow {
+  margin-left: auto; font-size: 18px; color: var(--text3);
+  transition: all 0.2s; align-self: center;
+}
+.tool-card:hover .tool-arrow { color: var(--accent); transform: translateX(3px); }
+
+/* Color themes per tool */
+.theme-cyan .tool-icon-wrap { background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.2); }
+.theme-purple .tool-icon-wrap { background: rgba(124,58,237,0.1); border: 1px solid rgba(124,58,237,0.2); }
+.theme-green .tool-icon-wrap { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2); }
+.theme-orange .tool-icon-wrap { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.2); }
+.theme-red .tool-icon-wrap { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); }
+.theme-blue .tool-icon-wrap { background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.2); }
+.theme-pink .tool-icon-wrap { background: rgba(236,72,153,0.1); border: 1px solid rgba(236,72,153,0.2); }
+.theme-teal .tool-icon-wrap { background: rgba(20,184,166,0.1); border: 1px solid rgba(20,184,166,0.2); }
+
+/* Feature strip */
+.features {
+  position: relative; z-index: 1;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 24px 20px;
+  margin-bottom: 0;
+}
+.features-grid {
+  max-width: 900px; margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 16px;
+  text-align: center;
+}
+.feature-item { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.feature-icon { font-size: 24px; }
+.feature-text { font-size: 12px; color: var(--text2); font-weight: 500; }
+
+/* Footer */
+footer {
+  position: relative; z-index: 1;
+  text-align: center;
+  padding: 24px 20px;
+  font-size: 12px;
+  color: var(--text3);
+}
+footer a { color: var(--text2); text-decoration: none; }
+footer a:hover { color: var(--accent); }
+
+/* Highlight animation on cards */
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.tool-card { animation: cardIn 0.4s ease both; }
+.tool-card:nth-child(1){animation-delay:0.05s}
+.tool-card:nth-child(2){animation-delay:0.1s}
+.tool-card:nth-child(3){animation-delay:0.15s}
+.tool-card:nth-child(4){animation-delay:0.2s}
+.tool-card:nth-child(5){animation-delay:0.25s}
+.tool-card:nth-child(6){animation-delay:0.3s}
+.tool-card:nth-child(7){animation-delay:0.35s}
+.tool-card:nth-child(8){animation-delay:0.4s}
+.tool-card:nth-child(9){animation-delay:0.45s}
+.tool-card:nth-child(10){animation-delay:0.5s}
+.tool-card:nth-child(11){animation-delay:0.55s}
+.tool-card:nth-child(12){animation-delay:0.6s}
+.tool-card:nth-child(13){animation-delay:0.65s}
+
+.no-results {
+  text-align: center; padding: 60px 20px; color: var(--text3);
+  display: none;
+}
+.no-results .nr-icon { font-size: 48px; margin-bottom: 12px; }
+
+@media(max-width:500px){
+  .tools-grid{grid-template-columns:1fr}
+  .hero-pills{gap:6px}
+}
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-glow glow1"></div>
+<div class="bg-glow glow2"></div>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="logo-wrap">
+    <div class="logo-shield">
+      <div class="logo-ring"></div>
+      <svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M28 4L8 14v14c0 11.05 8.5 21.39 20 24 11.5-2.61 20-12.95 20-24V14L28 4z" fill="url(#shieldGrad)" opacity="0.9"/>
+        <path d="M28 4L8 14v14c0 11.05 8.5 21.39 20 24 11.5-2.61 20-12.95 20-24V14L28 4z" stroke="url(#strokeGrad)" stroke-width="1.5" fill="none"/>
+        <path d="M20 28l5.5 5.5L36 23" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <defs>
+          <linearGradient id="shieldGrad" x1="8" y1="4" x2="48" y2="42" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#00d4ff" stop-opacity="0.3"/>
+            <stop offset="100%" stop-color="#7c3aed" stop-opacity="0.3"/>
+          </linearGradient>
+          <linearGradient id="strokeGrad" x1="8" y1="4" x2="48" y2="42" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#00d4ff"/>
+            <stop offset="100%" stop-color="#7c3aed"/>
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+  </div>
+
+  <div class="hero-badge">● 100% OFFLINE — ZERO UPLOAD</div>
+  <h1>Privacy Forge</h1>
+  <p class="tagline">Everything Privacy. Offline. No Upload. No Tracking.</p>
+  <p class="hero-desc">A complete privacy toolkit that runs entirely in your browser. Every operation is local — nothing ever leaves your device. No accounts, no servers, no ads.</p>
+
+  <div class="hero-pills">
+    <div class="pill"><span class="dot"></span>No Internet Required</div>
+    <div class="pill"><span class="dot"></span>No Account</div>
+    <div class="pill"><span class="dot"></span>No Analytics</div>
+    <div class="pill"><span class="dot"></span>No Data Collection</div>
+    <div class="pill"><span class="dot"></span>No Ads</div>
+    <div class="pill"><span class="dot"></span>Open in Browser</div>
+  </div>
+</div>
+
+<!-- SEARCH -->
+<div class="search-wrap">
+  <span class="search-icon">🔍</span>
+  <input type="text" class="search-input" id="search" placeholder="Search tools..." oninput="filterTools()">
+</div>
+
+<!-- FILTERS -->
+<div class="filters">
+  <button class="filter-btn active" onclick="filterCat('all',this)">All Tools</button>
+  <button class="filter-btn" onclick="filterCat('password',this)">🔑 Password</button>
+  <button class="filter-btn" onclick="filterCat('file',this)">📁 Files</button>
+  <button class="filter-btn" onclick="filterCat('encode',this)">🔠 Encode</button>
+  <button class="filter-btn" onclick="filterCat('privacy',this)">🔒 Privacy</button>
+  <button class="filter-btn" onclick="filterCat('generator',this)">🎲 Generator</button>
+</div>
+
+<!-- TOOLS GRID -->
+<div class="tools-section">
+  <div class="section-label" id="section-label">13 Privacy Tools — All Offline</div>
+  <div class="tools-grid" id="tools-grid"></div>
+  <div class="no-results" id="no-results">
+    <div class="nr-icon">🔍</div>
+    <div style="font-weight:600;font-size:16px;color:var(--text2);margin-bottom:4px">No tools found</div>
+    <div>Try a different search term</div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<div class="features">
+  <div class="features-grid">
+    <div class="feature-item"><div class="feature-icon">🔒</div><div class="feature-text">AES-256 Encryption</div></div>
+    <div class="feature-item"><div class="feature-icon">📴</div><div class="feature-text">Offline First</div></div>
+    <div class="feature-item"><div class="feature-icon">🚫</div><div class="feature-text">No Tracking</div></div>
+    <div class="feature-item"><div class="feature-icon">⚡</div><div class="feature-text">Instant Results</div></div>
+    <div class="feature-item"><div class="feature-icon">📱</div><div class="feature-text">Mobile Friendly</div></div>
+    <div class="feature-item"><div class="feature-icon">🆓</div><div class="feature-text">100% Free</div></div>
+  </div>
+</div>
+
+<footer>
+  <p>Privacy Forge &copy; 2025 — Built for privacy, runs offline, zero data collection</p>
+  <p style="margin-top:4px">Everything runs locally in your browser. <a href="#">Open Source</a></p>
+</footer>
+
+<script>
+const tools = [
+  {
+    id: 'password',
+    icon: '🔑',
+    title: 'Password Generator',
+    subtitle: 'Strong • Memorable • PIN • Passphrase',
+    desc: 'Generate cryptographically secure passwords with custom rules, strength meter, and entropy score.',
+    tags: ['Strong', 'PIN', 'Passphrase', 'Custom'],
+    theme: 'cyan',
+    url: 'password-generator/index.html',
+    cats: ['password', 'generator'],
+    keywords: 'password pin passphrase strong memorable entropy secure'
+  },
+  {
+    id: 'qr',
+    icon: '📱',
+    title: 'QR Forge',
+    subtitle: 'Generate • Design • Decode QR Codes',
+    desc: 'Complete QR toolkit — URL, WiFi, Contact, WhatsApp, Location, Crypto. Custom colors, logo, SVG export.',
+    tags: ['Generate', 'Design', 'Decode', 'WiFi', 'vCard'],
+    theme: 'purple',
+    url: 'qr-forge/index.html',
+    cats: ['generator', 'encode'],
+    keywords: 'qr code generate decode scan wifi contact whatsapp telegram location'
+  },
+  {
+    id: 'metadata',
+    icon: '🖼️',
+    title: 'Metadata Cleaner',
+    subtitle: 'Remove GPS, Camera, Author data',
+    desc: 'Strip EXIF metadata from JPG, PNG, WebP images. Remove GPS location, camera model, device name.',
+    tags: ['EXIF', 'GPS Remove', 'JPG', 'PNG', 'Batch'],
+    theme: 'green',
+    url: 'metadata-cleaner/index.html',
+    cats: ['file', 'privacy'],
+    keywords: 'exif metadata gps location camera remove strip clean jpg png webp'
+  },
+  {
+    id: 'url',
+    icon: '🔗',
+    title: 'URL Cleaner',
+    subtitle: 'Remove tracking parameters',
+    desc: 'Strip utm_source, fbclid, gclid and 30+ tracking parameters. Clean links before sharing.',
+    tags: ['UTM', 'fbclid', 'gclid', 'Tracking'],
+    theme: 'orange',
+    url: 'url-cleaner/index.html',
+    cats: ['privacy', 'encode'],
+    keywords: 'url clean tracking utm fbclid gclid remove parameters link'
+  },
+  {
+    id: 'note',
+    icon: '📝',
+    title: 'Secure Note',
+    subtitle: 'AES-256 Encrypted Offline Notes',
+    desc: 'Write and encrypt notes with AES-256-GCM. Password protected, no cloud, no account. Export encrypted files.',
+    tags: ['AES-256', 'Encrypted', 'Offline', 'Password'],
+    theme: 'red',
+    url: 'secure-note/index.html',
+    cats: ['privacy', 'password'],
+    keywords: 'secure note encrypted aes password protect private offline'
+  },
+  {
+    id: 'hash',
+    icon: '🔐',
+    title: 'File Hash Generator',
+    subtitle: 'MD5 • SHA-1 • SHA-256 • SHA-512',
+    desc: 'Generate cryptographic hashes for any file locally. Verify file integrity and detect tampering.',
+    tags: ['MD5', 'SHA-256', 'SHA-512', 'Verify'],
+    theme: 'blue',
+    url: 'file-hash/index.html',
+    cats: ['file', 'generator'],
+    keywords: 'hash md5 sha256 sha512 sha1 file checksum integrity verify'
+  },
+  {
+    id: 'random',
+    icon: '🎲',
+    title: 'Random Generator',
+    subtitle: 'Password • Token • UUID • Recovery Codes',
+    desc: 'Cryptographically secure random data. API tokens, UUIDs, recovery codes, OTP secrets, PINs.',
+    tags: ['UUID', 'Token', 'Recovery', 'OTP'],
+    theme: 'pink',
+    url: 'random-generator/index.html',
+    cats: ['generator', 'password'],
+    keywords: 'random uuid token recovery code otp password generate secure'
+  },
+  {
+    id: 'encoder',
+    icon: '🔠',
+    title: 'Text Encoder',
+    subtitle: 'Base64 • URL • HTML • Hex • Morse • ROT',
+    desc: 'Encode and decode text with Base64, URL encoding, HTML entities, Hex, Binary, Morse code, and ciphers.',
+    tags: ['Base64', 'URL', 'Hex', 'Binary', 'Morse'],
+    theme: 'teal',
+    url: 'text-encoder/index.html',
+    cats: ['encode'],
+    keywords: 'encode decode base64 url hex binary morse rot13 cipher text'
+  },
+  {
+    id: 'inspector',
+    icon: '📂',
+    title: 'File Inspector',
+    subtitle: 'Size • Type • MIME • Hash • Magic Bytes',
+    desc: 'Inspect any file locally — detect real file type from magic bytes, compute hash, view hex preview.',
+    tags: ['MIME', 'Magic Bytes', 'SHA-256', 'Hex'],
+    theme: 'cyan',
+    url: 'file-inspector/index.html',
+    cats: ['file'],
+    keywords: 'file inspector size type mime magic bytes hash hex inspect'
+  },
+  {
+    id: 'browser',
+    icon: '🌐',
+    title: 'Browser Privacy Report',
+    subtitle: 'Cookies • Storage • Permissions • Fingerprint',
+    desc: 'Check your browser privacy score. See enabled APIs, permissions, storage, and fingerprinting exposure.',
+    tags: ['Cookies', 'Permissions', 'Privacy Score'],
+    theme: 'green',
+    url: 'file-inspector/index.html#browser',
+    cats: ['privacy'],
+    keywords: 'browser privacy report cookies storage permissions fingerprint score'
+  },
+  {
+    id: 'cleaner',
+    icon: '🧹',
+    title: 'Data Cleaner',
+    subtitle: 'Duplicates • Hidden Chars • Spaces • Unicode',
+    desc: 'Clean messy text — remove duplicate lines, zero-width characters, extra spaces, empty lines.',
+    tags: ['Duplicates', 'Zero-Width', 'Sort', 'Unicode'],
+    theme: 'orange',
+    url: 'file-inspector/index.html#cleaner',
+    cats: ['privacy', 'file'],
+    keywords: 'data cleaner duplicate lines spaces unicode zero-width characters text'
+  },
+  {
+    id: 'clipboard',
+    icon: '📋',
+    title: 'Clipboard Cleaner',
+    subtitle: 'Clear • Analyze • Safe Copy',
+    desc: 'Read, analyze, and safely clear clipboard. Detect sensitive data like emails, phone numbers, card patterns.',
+    tags: ['Clear', 'Analyze', 'Safe Copy'],
+    theme: 'purple',
+    url: 'file-inspector/index.html#clipboard',
+    cats: ['privacy'],
+    keywords: 'clipboard cleaner clear analyze safe copy sensitive data'
+  },
+  {
+    id: 'exif',
+    icon: '📷',
+    title: 'EXIF Viewer',
+    subtitle: 'View & Remove image metadata',
+    desc: 'See exactly what data is hidden in your photos — GPS, camera, date, software. One-click remove all.',
+    tags: ['GPS', 'Camera', 'One-Click', 'Export'],
+    theme: 'red',
+    url: 'metadata-cleaner/index.html',
+    cats: ['file', 'privacy'],
+    keywords: 'exif viewer gps camera date software metadata image photo remove'
+  }
+];
+
+let activeFilter = 'all';
+
+function renderTools(filtered) {
+  const grid = document.getElementById('tools-grid');
+  const noRes = document.getElementById('no-results');
+  const label = document.getElementById('section-label');
+  if (!filtered.length) {
+    grid.innerHTML = '';
+    noRes.style.display = 'block';
+    return;
+  }
+  noRes.style.display = 'none';
+  label.textContent = `${filtered.length} Privacy Tool${filtered.length !== 1 ? 's' : ''} — All Offline`;
+  grid.innerHTML = filtered.map(t => `
+    <a class="tool-card theme-${t.theme}" href="${t.url}">
+      <div class="tool-header">
+        <div class="tool-icon-wrap">${t.icon}</div>
+        <div>
+          <div class="tool-title">${t.title}</div>
+          <div class="tool-subtitle">${t.subtitle}</div>
+        </div>
+        <span class="tool-arrow">→</span>
+      </div>
+      <div class="tool-desc">${t.desc}</div>
+      <div class="tool-tags">${t.tags.map(tag => `<span class="tool-tag">${tag}</span>`).join('')}</div>
+    </a>
+  `).join('');
+}
+
+function filterCat(cat, btn) {
+  activeFilter = cat;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  applyFilters();
+}
+
+function filterTools() { applyFilters(); }
+
+function applyFilters() {
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  let filtered = tools;
+  if (activeFilter !== 'all') filtered = filtered.filter(t => t.cats.includes(activeFilter));
+  if (q) filtered = filtered.filter(t => t.keywords.includes(q) || t.title.toLowerCase().includes(q) || t.desc.toLowerCase().includes(q));
+  renderTools(filtered);
+}
+
+// Handle hash-based tab opening
+document.querySelectorAll('a.tool-card').forEach = () => {}; // handled via href
+
+renderTools(tools);
+</script>
+</body>
+</html>

@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Random Generator — Privacy Forge</title>
+<style>
+:root{--bg:#0a0e1a;--surface:#111827;--surface2:#1a2235;--border:#1e2d45;--accent:#00d4ff;--accent2:#7c3aed;--success:#10b981;--warning:#f59e0b;--danger:#ef4444;--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;--radius:12px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;min-height:100vh;padding:16px}
+.back-btn{position:fixed;top:16px;left:16px;background:var(--surface2);border:1px solid var(--border);color:var(--text2);padding:8px 14px;border-radius:8px;text-decoration:none;font-size:13px;z-index:100}
+.back-btn:hover{color:var(--accent);border-color:var(--accent)}
+.header{text-align:center;padding:32px 0 24px}
+.logo-icon{width:64px;height:64px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:16px;display:inline-flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:12px;box-shadow:0 0 32px rgba(0,212,255,0.3);animation:pulse 3s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 32px rgba(0,212,255,0.3)}50%{box-shadow:0 0 48px rgba(0,212,255,0.6)}}
+h1{font-size:clamp(22px,5vw,32px);font-weight:700}
+.subtitle{color:var(--text2);font-size:14px;margin-top:6px}
+.container{max-width:680px;margin:0 auto}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;box-shadow:0 4px 24px rgba(0,0,0,0.4)}
+.section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text3);margin-bottom:12px}
+.gen-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:12px;transition:border-color 0.2s}
+.gen-card:hover{border-color:var(--accent)}
+.gen-title{font-size:14px;font-weight:600;margin-bottom:4px}
+.gen-desc{font-size:12px;color:var(--text3);margin-bottom:12px}
+.result-box{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;font-family:'Courier New',monospace;font-size:13px;word-break:break-all;color:var(--accent);min-height:44px;display:flex;align-items:center;margin-bottom:10px;line-height:1.5;position:relative;cursor:text}
+.result-empty{color:var(--text3);font-family:'Inter',sans-serif;font-size:13px}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap}
+.btn{padding:10px 16px;border-radius:8px;border:none;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:white}
+.btn-primary:hover{opacity:0.9;transform:translateY(-1px)}
+.btn-secondary{background:var(--surface);border:1px solid var(--border);color:var(--text2)}
+.btn-secondary:hover{border-color:var(--accent);color:var(--accent)}
+.input{background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:8px 10px;font-size:13px;outline:none;transition:border-color 0.2s;width:100%}
+.input:focus{border-color:var(--accent)}
+.range-wrap{margin:10px 0}
+.range-header{display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:6px}
+.range-val{color:var(--accent);font-weight:700}
+input[type=range]{width:100%;height:6px;-webkit-appearance:none;background:var(--border);border-radius:3px;outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));cursor:pointer}
+.multi-result{display:flex;flex-direction:column;gap:6px}
+.multi-item{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px 12px;font-family:'Courier New',monospace;font-size:12px;color:var(--accent);display:flex;align-items:center;justify-content:space-between;gap:8px;word-break:break-all}
+.options-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.opt-btn{padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text2);font-size:12px;cursor:pointer;transition:all 0.2s}
+.opt-btn.on{background:rgba(0,212,255,0.1);border-color:var(--accent);color:var(--accent)}
+.uuid-ver{display:flex;gap:8px;margin-bottom:10px}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--success);color:white;padding:12px 24px;border-radius:40px;font-size:14px;font-weight:600;transition:transform 0.3s;z-index:999;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<a href="../index.html" class="back-btn">← Back</a>
+<div class="header">
+  <div class="logo-icon">🎲</div>
+  <h1>Random Generator</h1>
+  <p class="subtitle">Cryptographically secure random data — All local</p>
+</div>
+
+<div class="container">
+
+  <!-- Random Password -->
+  <div class="card">
+    <div class="section-title">🔑 Random Password</div>
+    <div class="gen-card">
+      <div class="gen-title">Quick Secure Password</div>
+      <div class="gen-desc">Cryptographically random, character-level entropy</div>
+      <div class="options-row">
+        <button class="opt-btn on" id="rp-upper" onclick="toggleOpt('rp-upper')">A-Z</button>
+        <button class="opt-btn on" id="rp-lower" onclick="toggleOpt('rp-lower')">a-z</button>
+        <button class="opt-btn on" id="rp-nums" onclick="toggleOpt('rp-nums')">0-9</button>
+        <button class="opt-btn on" id="rp-syms" onclick="toggleOpt('rp-syms')">!@#</button>
+      </div>
+      <div class="range-wrap">
+        <div class="range-header"><span>Length</span><span class="range-val" id="rp-len-val">24</span></div>
+        <input type="range" id="rp-len" min="8" max="128" value="24" oninput="document.getElementById('rp-len-val').textContent=this.value">
+      </div>
+      <div class="result-box" id="rp-result"><span class="result-empty">Click Generate</span></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="generateRandPass()">🔄 Generate</button>
+        <button class="btn btn-secondary" onclick="copyResult('rp-result')">📋 Copy</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recovery Codes -->
+  <div class="card">
+    <div class="section-title">🛡 Recovery Codes</div>
+    <div class="gen-card">
+      <div class="gen-title">Backup Recovery Codes</div>
+      <div class="gen-desc">Like 2FA backup codes — Save these somewhere safe</div>
+      <div class="range-wrap">
+        <div class="range-header"><span>Number of Codes</span><span class="range-val" id="rc-count-val">8</span></div>
+        <input type="range" id="rc-count" min="4" max="16" value="8" oninput="document.getElementById('rc-count-val').textContent=this.value">
+      </div>
+      <div class="multi-result" id="rc-result" style="margin-bottom:10px">
+        <div style="color:var(--text3);font-size:13px;padding:8px">Click Generate</div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="generateRecoveryCodes()">🔄 Generate</button>
+        <button class="btn btn-secondary" onclick="copyMulti('rc-result')">📋 Copy All</button>
+        <button class="btn btn-secondary" onclick="downloadCodes()">⬇️ Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Security Token -->
+  <div class="card">
+    <div class="section-title">🔒 Security Token</div>
+    <div class="gen-card">
+      <div class="gen-title">API Key / Secret Token</div>
+      <div class="gen-desc">High-entropy token for API keys, secrets, session tokens</div>
+      <div class="options-row">
+        <button class="opt-btn on" id="tok-hex" onclick="selectTokFormat('hex',this)">HEX</button>
+        <button class="opt-btn" id="tok-b64" onclick="selectTokFormat('b64',this)">Base64</button>
+        <button class="opt-btn" id="tok-alpnum" onclick="selectTokFormat('alpnum',this)">AlphaNum</button>
+      </div>
+      <div class="range-wrap">
+        <div class="range-header"><span>Bytes of Entropy</span><span class="range-val" id="tok-len-val">32</span></div>
+        <input type="range" id="tok-len" min="16" max="64" value="32" step="8" oninput="document.getElementById('tok-len-val').textContent=this.value;generateToken()">
+      </div>
+      <div class="result-box" id="tok-result"><span class="result-empty">Click Generate</span></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="generateToken()">🔄 Generate</button>
+        <button class="btn btn-secondary" onclick="copyResult('tok-result')">📋 Copy</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- UUID -->
+  <div class="card">
+    <div class="section-title">🆔 UUID Generator</div>
+    <div class="gen-card">
+      <div class="gen-title">Universally Unique Identifier</div>
+      <div class="gen-desc">RFC 4122 compliant UUID generation</div>
+      <div class="uuid-ver">
+        <button class="opt-btn on" id="uuid-v4" onclick="selectUUID('v4',this)">v4 (Random)</button>
+        <button class="opt-btn" id="uuid-v1" onclick="selectUUID('v1',this)">v1 (Time)</button>
+        <button class="opt-btn" id="uuid-nil" onclick="selectUUID('nil',this)">Nil</button>
+      </div>
+      <div class="result-box" id="uuid-result"><span class="result-empty">Click Generate</span></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="generateUUID()">🔄 Generate</button>
+        <button class="btn btn-secondary" onclick="copyResult('uuid-result')">📋 Copy</button>
+        <button class="btn btn-secondary" onclick="generateBulkUUID()">📦 Bulk (10)</button>
+      </div>
+      <div class="multi-result" id="uuid-bulk" style="margin-top:10px"></div>
+    </div>
+  </div>
+
+  <!-- OTP / TOTP Secret -->
+  <div class="card">
+    <div class="section-title">🔢 OTP Secret Key</div>
+    <div class="gen-card">
+      <div class="gen-title">TOTP / HOTP Base32 Secret</div>
+      <div class="gen-desc">Compatible with Google Authenticator, Authy, etc.</div>
+      <div class="result-box" id="otp-result"><span class="result-empty">Click Generate</span></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="generateOTP()">🔄 Generate</button>
+        <button class="btn btn-secondary" onclick="copyResult('otp-result')">📋 Copy</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Number Range -->
+  <div class="card">
+    <div class="section-title">🔢 Random Number</div>
+    <div class="gen-card">
+      <div class="gen-title">Cryptographically Random Number</div>
+      <div class="gen-desc">Unbiased random number in a range</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div><label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Min</label><input class="input" type="number" id="num-min" value="1"></div>
+        <div><label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Max</label><input class="input" type="number" id="num-max" value="100"></div>
+      </div>
+      <div class="result-box" id="num-result" style="font-size:40px;justify-content:center;font-weight:700;color:var(--accent)"><span class="result-empty" style="font-size:13px">Click Generate</span></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="generateNumber()">🎲 Roll</button>
+        <button class="btn btn-secondary" onclick="copyResult('num-result')">📋 Copy</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+function cryptoRand(n){const a=new Uint32Array(1);crypto.getRandomValues(a);return a[0]%n;}
+function cryptoBytes(n){const b=new Uint8Array(n);crypto.getRandomValues(b);return b;}
+
+const optStates={};
+function toggleOpt(id){
+  optStates[id]=!optStates[id];
+  if(optStates[id]===undefined)optStates[id]=false;
+  document.getElementById(id).classList.toggle('on',!optStates[id]);
+}
+function isOn(id){return !optStates[id];}
+
+let tokFormat='hex', uuidVer='v4';
+
+function selectTokFormat(fmt,btn){
+  tokFormat=fmt;
+  ['tok-hex','tok-b64','tok-alpnum'].forEach(id=>document.getElementById(id).classList.remove('on'));
+  btn.classList.add('on');
+  generateToken();
+}
+
+function selectUUID(ver,btn){
+  uuidVer=ver;
+  ['uuid-v4','uuid-v1','uuid-nil'].forEach(id=>document.getElementById(id).classList.remove('on'));
+  btn.classList.add('on');
+  generateUUID();
+}
+
+function generateRandPass(){
+  let cs='';
+  if(isOn('rp-upper'))cs+='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  if(isOn('rp-lower'))cs+='abcdefghijklmnopqrstuvwxyz';
+  if(isOn('rp-nums'))cs+='0123456789';
+  if(isOn('rp-syms'))cs+='!@#$%^&*()-_+=[]{}|;:,.<>?';
+  if(!cs)cs='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const len=parseInt(document.getElementById('rp-len').value);
+  const pwd=Array.from({length:len},()=>cs[cryptoRand(cs.length)]).join('');
+  setResult('rp-result',pwd);
+}
+
+function generateRecoveryCodes(){
+  const count=parseInt(document.getElementById('rc-count').value);
+  const codes=Array.from({length:count},()=>{
+    const bytes=cryptoBytes(5);
+    return Array.from(bytes).map(b=>b.toString(16).padStart(2,'0')).join('').toUpperCase().match(/.{4}/g).join('-');
+  });
+  const el=document.getElementById('rc-result');
+  el.innerHTML=codes.map((c,i)=>`<div class="multi-item"><span>${(i+1).toString().padStart(2,'0')}.</span><span style="flex:1">${c}</span><button onclick="navigator.clipboard.writeText('${c}');showToast('📋 Copied')" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer">Copy</button></div>`).join('');
+}
+
+function copyMulti(id){
+  const items=document.getElementById(id).querySelectorAll('.multi-item span:nth-child(2)');
+  const text=Array.from(items).map(i=>i.textContent).join('\n');
+  navigator.clipboard.writeText(text);
+  showToast('📋 All codes copied!');
+}
+
+function downloadCodes(){
+  const items=document.getElementById('rc-result').querySelectorAll('.multi-item span:nth-child(2)');
+  const text=['Privacy Forge — Recovery Codes','Generated: '+new Date().toLocaleString(),'','Keep these safe! Each code can only be used once.','',Array.from(items).map((i,n)=>`${(n+1).toString().padStart(2,'0')}. ${i.textContent}`).join('\n')].join('\n');
+  const blob=new Blob([text],{type:'text/plain'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='recovery-codes.txt';a.click();
+  showToast('⬇️ Codes saved!');
+}
+
+function generateToken(){
+  const bytes=parseInt(document.getElementById('tok-len').value);
+  const randBytes=cryptoBytes(bytes);
+  let token='';
+  if(tokFormat==='hex')token=Array.from(randBytes).map(b=>b.toString(16).padStart(2,'0')).join('');
+  else if(tokFormat==='b64')token=btoa(String.fromCharCode(...randBytes)).replace(/[+/=]/g,c=>({'+':'-','/':'_','=':''}[c]));
+  else{const cs='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';token=Array.from(randBytes).map(b=>cs[b%cs.length]).join('');}
+  setResult('tok-result',token);
+}
+
+function generateUUID(){
+  let uuid;
+  if(uuidVer==='v4'){
+    const bytes=cryptoBytes(16);
+    bytes[6]=(bytes[6]&0x0f)|0x40;
+    bytes[8]=(bytes[8]&0x3f)|0x80;
+    const hex=Array.from(bytes).map(b=>b.toString(16).padStart(2,'0'));
+    uuid=[hex.slice(0,4),hex.slice(4,6),hex.slice(6,8),hex.slice(8,10),hex.slice(10,16)].map(g=>g.join('')).join('-');
+  } else if(uuidVer==='v1'){
+    const now=BigInt(Date.now());
+    const ts=(now*10000n+122192928000000000n).toString(16).padStart(16,'0');
+    const bytes=cryptoBytes(8);
+    bytes[0]=(bytes[0]&0x3f)|0x80;
+    const node=Array.from(bytes.slice(2,8)).map(b=>b.toString(16).padStart(2,'0')).join('');
+    uuid=`${ts.slice(7,15)}-${ts.slice(3,7)}-1${ts.slice(0,3)}-${bytes[0].toString(16).padStart(2,'0')}${bytes[1].toString(16).padStart(2,'0')}-${node}`;
+  } else uuid='00000000-0000-0000-0000-000000000000';
+  setResult('uuid-result',uuid);
+  return uuid;
+}
+
+function generateBulkUUID(){
+  const uuids=Array.from({length:10},()=>generateUUID());
+  document.getElementById('uuid-bulk').innerHTML=uuids.map(u=>`<div class="multi-item"><span style="flex:1">${u}</span><button onclick="navigator.clipboard.writeText('${u}');showToast('📋')" style="background:none;border:1px solid var(--border);color:var(--text2);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer">Copy</button></div>`).join('');
+}
+
+function generateOTP(){
+  const base32chars='ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  const bytes=cryptoBytes(20);
+  const secret=Array.from(bytes).map(b=>base32chars[b&31]).join('').match(/.{4}/g).join(' ');
+  setResult('otp-result',secret);
+}
+
+function generateNumber(){
+  const min=parseInt(document.getElementById('num-min').value)||0;
+  const max=parseInt(document.getElementById('num-max').value)||100;
+  if(min>=max){showToast('⚠️ Min must be less than Max');return;}
+  const range=max-min+1;
+  const num=min+cryptoRand(range);
+  document.getElementById('num-result').textContent=num;
+}
+
+function setResult(id,text){
+  document.getElementById(id).textContent=text;
+}
+
+function copyResult(id){
+  const el=document.getElementById(id);
+  const text=el.textContent;
+  if(!text||el.querySelector('.result-empty'))return;
+  navigator.clipboard.writeText(text);
+  showToast('📋 Copied!');
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2000);
+}
+</script>
+</body>
+</html>

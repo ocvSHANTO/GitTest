@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Text Encoder — Privacy Forge</title>
+<style>
+:root{--bg:#0a0e1a;--surface:#111827;--surface2:#1a2235;--border:#1e2d45;--accent:#00d4ff;--accent2:#7c3aed;--success:#10b981;--warning:#f59e0b;--danger:#ef4444;--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;--radius:12px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;min-height:100vh;padding:16px}
+.back-btn{position:fixed;top:16px;left:16px;background:var(--surface2);border:1px solid var(--border);color:var(--text2);padding:8px 14px;border-radius:8px;text-decoration:none;font-size:13px;z-index:100}
+.back-btn:hover{color:var(--accent);border-color:var(--accent)}
+.header{text-align:center;padding:32px 0 24px}
+.logo-icon{width:64px;height:64px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:16px;display:inline-flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:12px;box-shadow:0 0 32px rgba(0,212,255,0.3);animation:pulse 3s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 32px rgba(0,212,255,0.3)}50%{box-shadow:0 0 48px rgba(0,212,255,0.6)}}
+h1{font-size:clamp(22px,5vw,32px);font-weight:700}
+.subtitle{color:var(--text2);font-size:14px;margin-top:6px}
+.container{max-width:700px;margin:0 auto}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;box-shadow:0 4px 24px rgba(0,0,0,0.4)}
+.section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text3);margin-bottom:12px}
+textarea.input{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:12px;font-size:13px;outline:none;transition:border-color 0.2s;resize:vertical;line-height:1.6;font-family:'Courier New',monospace;min-height:100px}
+textarea.input:focus{border-color:var(--accent)}
+textarea.input::placeholder{color:var(--text3);font-family:'Inter',sans-serif}
+.btn{padding:10px 16px;border-radius:8px;border:none;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:white}
+.btn-primary:hover{opacity:0.9;transform:translateY(-1px)}
+.btn-secondary{background:var(--surface2);border:1px solid var(--border);color:var(--text2)}
+.btn-secondary:hover{border-color:var(--accent);color:var(--accent)}
+.btn-danger{background:rgba(239,68,68,0.1);border:1px solid var(--danger);color:var(--danger)}
+.encode-block{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:12px}
+.encode-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.encode-name{font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px}
+.encode-badge{font-size:10px;padding:2px 8px;border-radius:4px;font-weight:600}
+.badge-encode{background:rgba(0,212,255,0.1);color:var(--accent);border:1px solid rgba(0,212,255,0.3)}
+.badge-decode{background:rgba(124,58,237,0.1);color:var(--accent2);border:1px solid rgba(124,58,237,0.3)}
+.io-row{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:start}
+.arrow-col{display:flex;flex-direction:column;gap:6px;padding-top:30px}
+.arrow-btn{background:var(--surface);border:1px solid var(--border);color:var(--text2);width:36px;height:36px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all 0.2s;flex-shrink:0}
+.arrow-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(0,212,255,0.05)}
+.io-label{font-size:11px;color:var(--text3);margin-bottom:4px;font-weight:600;text-transform:uppercase}
+.result-area{position:relative}
+.copy-overlay{position:absolute;top:8px;right:8px;background:var(--surface);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;transition:all 0.2s}
+.copy-overlay:hover{border-color:var(--accent);color:var(--accent)}
+.err-text{color:var(--danger);font-size:12px;margin-top:4px;display:none}
+.stats-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:6px}
+.stat{font-size:11px;color:var(--text3)}
+.stat span{color:var(--accent)}
+.tabs{display:flex;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:4px;margin:0 auto 24px;max-width:700px;gap:4px;overflow-x:auto}
+.tab{flex:1;padding:10px 8px;border-radius:8px;border:none;background:transparent;color:var(--text2);font-size:12px;cursor:pointer;transition:all 0.2s;font-weight:500;white-space:nowrap}
+.tab.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:white}
+.tab-content{display:none}.tab-content.active{display:block}
+.morse-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(60px,1fr));gap:6px;margin-top:12px;max-height:200px;overflow-y:auto}
+.morse-item{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:6px;text-align:center;font-size:12px}
+.morse-char{font-weight:700;color:var(--text)}
+.morse-code{color:var(--accent);font-family:monospace;font-size:11px}
+.rot-slider{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.rot-val{background:rgba(0,212,255,0.1);color:var(--accent);border:1px solid rgba(0,212,255,0.3);border-radius:6px;padding:4px 12px;font-weight:700;min-width:40px;text-align:center}
+input[type=range]{flex:1;height:6px;-webkit-appearance:none;background:var(--border);border-radius:3px;outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));cursor:pointer}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--success);color:white;padding:12px 24px;border-radius:40px;font-size:14px;font-weight:600;transition:transform 0.3s;z-index:999;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<a href="../index.html" class="back-btn">← Back</a>
+<div class="header">
+  <div class="logo-icon">🔠</div>
+  <h1>Text Encoder</h1>
+  <p class="subtitle">Base64 • URL • HTML • Hex • Binary • Morse • ROT13</p>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('standard',this)">📦 Standard</button>
+  <button class="tab" onclick="switchTab('advanced',this)">🔬 Advanced</button>
+  <button class="tab" onclick="switchTab('morse',this)">📡 Morse</button>
+  <button class="tab" onclick="switchTab('cipher',this)">🔐 Cipher</button>
+</div>
+
+<div class="container">
+
+<!-- STANDARD TAB -->
+<div id="tab-standard" class="tab-content active">
+
+  <!-- Base64 -->
+  <div class="card">
+    <div class="encode-header">
+      <div class="encode-name">📦 Base64 <span class="encode-badge badge-encode">ENCODE / DECODE</span></div>
+    </div>
+    <div class="io-row">
+      <div>
+        <div class="io-label">Input</div>
+        <textarea class="input" id="b64-in" placeholder="Enter text to encode or Base64 to decode..." oninput="autoB64()"></textarea>
+        <div class="stats-row"><div class="stat">Length: <span id="b64-in-len">0</span></div></div>
+      </div>
+      <div class="arrow-col">
+        <button class="arrow-btn" onclick="doB64('encode')" title="Encode →">→</button>
+        <button class="arrow-btn" onclick="doB64('decode')" title="← Decode">←</button>
+      </div>
+      <div class="result-area">
+        <div class="io-label">Output</div>
+        <textarea class="input" id="b64-out" placeholder="Result..." readonly></textarea>
+        <button class="copy-overlay" onclick="copyField('b64-out')">📋</button>
+        <div class="stats-row"><div class="stat">Length: <span id="b64-out-len">0</span></div></div>
+        <div class="err-text" id="b64-err">Invalid Base64 string</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+      <button class="btn btn-secondary" onclick="swapFields('b64-in','b64-out')">⇄ Swap</button>
+      <button class="btn btn-secondary" onclick="clearFields('b64-in','b64-out')">🗑 Clear</button>
+      <button class="btn btn-secondary" onclick="doB64('encode')">Encode →</button>
+      <button class="btn btn-secondary" onclick="doB64('decode')">← Decode</button>
+    </div>
+  </div>
+
+  <!-- URL Encode -->
+  <div class="card">
+    <div class="encode-header">
+      <div class="encode-name">🔗 URL Encode <span class="encode-badge badge-encode">ENCODE / DECODE</span></div>
+    </div>
+    <div class="io-row">
+      <div>
+        <div class="io-label">Input</div>
+        <textarea class="input" id="url-in" placeholder="https://example.com?q=hello world&lang=বাংলা" oninput="autoURL()"></textarea>
+      </div>
+      <div class="arrow-col">
+        <button class="arrow-btn" onclick="doURL('encode')">→</button>
+        <button class="arrow-btn" onclick="doURL('decode')">←</button>
+      </div>
+      <div class="result-area">
+        <div class="io-label">Output</div>
+        <textarea class="input" id="url-out" placeholder="Result..." readonly></textarea>
+        <button class="copy-overlay" onclick="copyField('url-out')">📋</button>
+        <div class="err-text" id="url-err">Invalid encoded string</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+      <button class="btn btn-secondary" onclick="swapFields('url-in','url-out')">⇄ Swap</button>
+      <button class="btn btn-secondary" onclick="doURL('encode')">Encode →</button>
+      <button class="btn btn-secondary" onclick="doURL('decode')">← Decode</button>
+    </div>
+  </div>
+
+  <!-- HTML Encode -->
+  <div class="card">
+    <div class="encode-header">
+      <div class="encode-name">🌐 HTML Entities <span class="encode-badge badge-encode">ENCODE / DECODE</span></div>
+    </div>
+    <div class="io-row">
+      <div>
+        <div class="io-label">Input</div>
+        <textarea class="input" id="html-in" placeholder='<p class="test">Hello & "World"</p>' oninput="autoHTML()"></textarea>
+      </div>
+      <div class="arrow-col">
+        <button class="arrow-btn" onclick="doHTML('encode')">→</button>
+        <button class="arrow-btn" onclick="doHTML('decode')">←</button>
+      </div>
+      <div class="result-area">
+        <div class="io-label">Output</div>
+        <textarea class="input" id="html-out" placeholder="Result..." readonly></textarea>
+        <button class="copy-overlay" onclick="copyField('html-out')">📋</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+      <button class="btn btn-secondary" onclick="swapFields('html-in','html-out')">⇄ Swap</button>
+      <button class="btn btn-secondary" onclick="doHTML('encode')">Encode →</button>
+      <button class="btn btn-secondary" onclick="doHTML('decode')">← Decode</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ADVANCED TAB -->
+<div id="tab-advanced" class="tab-content">
+
+  <!-- Hex -->
+  <div class="card">
+    <div class="encode-header">
+      <div class="encode-name">🔢 Hexadecimal <span class="encode-badge badge-encode">TEXT ↔ HEX</span></div>
+    </div>
+    <div class="io-row">
+      <div>
+        <div class="io-label">Plain Text</div>
+        <textarea class="input" id="hex-in" placeholder="Hello World" oninput="autoHex()"></textarea>
+      </div>
+      <div class="arrow-col">
+        <button class="arrow-btn" onclick="doHex('encode')">→</button>
+        <button class="arrow-btn" onclick="doHex('decode')">←</button>
+      </div>
+      <div class="result-area">
+        <div class="io-label">Hex Output</div>
+        <textarea class="input" id="hex-out" placeholder="48 65 6c 6c 6f..." readonly></textarea>
+        <button class="copy-overlay" onclick="copyField('hex-out')">📋</button>
+        <div class="err-text" id="hex-err">Invalid hex string</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+      <button class="btn btn-secondary" onclick="swapFields('hex-in','hex-out')">⇄ Swap</button>
+      <button class="btn btn-secondary" onclick="doHex('encode')">To Hex →</button>
+      <button class="btn btn-secondary" onclick="doHex('decode')">← From Hex</button>
+    </div>
+  </div>
+
+  <!-- Binary -->
+  <div class="card">
+    <div class="encode-header">
+      <div class="encode-name">💾 Binary <span class="encode-badge badge-encode">TEXT ↔ BINARY</span></div>
+    </div>
+    <div class="io-row">
+      <div>
+        <div class="io-label">Plain Text</div>
+        <textarea class="input" id="bin-in" placeholder="Hi" oninput="autoBin()"></textarea>
+      </div>
+      <div class="arrow-col">
+        <button class="arrow-btn" onclick="doBin('encode')">→</button>
+        <button class="arrow-btn" onclick="doBin('decode')">←</button>
+      </div>
+      <div class="result-area">
+        <div class="io-label">Binary Output</div>
+        <textarea class="input" id="bin-out" placeholder="01001000 01101001" readonly></textarea>
+        <button class="copy-overlay" onclick="copyField('bin-out')">📋</button>
+        <div class="err-text" id="bin-err">Invalid binary string</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+      <button class="btn btn-secondary" onclick="swapFields('bin-in','bin-out')">⇄ Swap</button>
+      <button class="btn btn-secondary" onclick="doBin('encode')">To Binary →</button>
+      <button class="btn btn-secondary" onclick="doBin('decode')">← From Binary</button>
+    </div>
+  </div>
+
+  <!-- ASCII -->
+  <div class="card">
+    <div class="encode-header">
+      <div class="encode-name">🔢 ASCII Codes <span class="encode-badge badge-encode">TEXT ↔ ASCII</span></div>
+    </div>
+    <div class="io-row">
+      <div>
+        <div class="io-label">Plain Text</div>
+        <textarea class="input" id="ascii-in" placeholder="Hello" oninput="autoASCII()"></textarea>
+      </div>
+      <div class="arrow-col">
+        <button class="arrow-btn" onclick="doASCII('encode')">→</button>
+        <button class="arrow-btn" onclick="doASCII('decode')">←</button>
+      </div>
+      <div class="result-area">
+        <div class="io-label">ASCII Codes</div>
+        <textarea class="input" id="ascii-out" placeholder="72 101 108 108 111" readonly></textarea>
+        <button class="copy-overlay" onclick="copyField('ascii-out')">📋</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+      <button class="btn btn-secondary" onclick="doASCII('encode')">To ASCII →</button>
+      <button class="btn btn-secondary" onclick="doASCII('decode')">← From ASCII</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- MORSE TAB -->
+<div id="tab-morse" class="tab-content">
+  <div class="card">
+    <div class="encode-name" style="margin-bottom:12px">📡 Morse Code <span class="encode-badge badge-encode">TEXT ↔ MORSE</span></div>
+    <div class="io-row">
+      <div>
+        <div class="io-label">Plain Text</div>
+        <textarea class="input" id="morse-in" placeholder="SOS HELLO WORLD" oninput="autoMorse()"></textarea>
+      </div>
+      <div class="arrow-col">
+        <button class="arrow-btn" onclick="doMorse('encode')">→</button>
+        <button class="arrow-btn" onclick="doMorse('decode')">←</button>
+      </div>
+      <div class="result-area">
+        <div class="io-label">Morse Code</div>
+        <textarea class="input" id="morse-out" placeholder="... --- ..." readonly></textarea>
+        <button class="copy-overlay" onclick="copyField('morse-out')">📋</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+      <button class="btn btn-secondary" onclick="swapFields('morse-in','morse-out')">⇄ Swap</button>
+      <button class="btn btn-secondary" onclick="doMorse('encode')">To Morse →</button>
+      <button class="btn btn-secondary" onclick="doMorse('decode')">← From Morse</button>
+      <button class="btn btn-primary" onclick="playMorse()">🔊 Play Audio</button>
+    </div>
+    <div style="margin-top:16px">
+      <div class="section-title">Morse Reference</div>
+      <div class="morse-grid" id="morse-ref"></div>
+    </div>
+  </div>
+</div>
+
+<!-- CIPHER TAB -->
+<div id="tab-cipher" class="tab-content">
+  <div class="card">
+    <div class="encode-name" style="margin-bottom:12px">🔐 ROT / Caesar Cipher</div>
+    <div class="rot-slider">
+      <span style="font-size:13px;color:var(--text2)">Shift</span>
+      <input type="range" id="rot-shift" min="1" max="25" value="13" oninput="document.getElementById('rot-val').textContent=this.value;doROT()">
+      <span class="rot-val" id="rot-val">13</span>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+      <button class="btn btn-secondary" onclick="setROT(13)">ROT13</button>
+      <button class="btn btn-secondary" onclick="setROT(5)">ROT5</button>
+      <button class="btn btn-secondary" onclick="setROT(18)">ROT18</button>
+    </div>
+    <div class="io-row">
+      <div>
+        <div class="io-label">Plain Text</div>
+        <textarea class="input" id="rot-in" placeholder="Hello World" oninput="doROT()"></textarea>
+      </div>
+      <div class="arrow-col">
+        <button class="arrow-btn" onclick="doROT()">→</button>
+      </div>
+      <div class="result-area">
+        <div class="io-label">Encoded</div>
+        <textarea class="input" id="rot-out" placeholder="Result..." readonly></textarea>
+        <button class="copy-overlay" onclick="copyField('rot-out')">📋</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="encode-name" style="margin-bottom:12px">🔄 Reverse & Transform</div>
+    <textarea class="input" id="transform-in" placeholder="Enter text to transform..." rows="4" oninput="autoTransform()"></textarea>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+      <button class="btn btn-secondary" onclick="transform('reverse')">↩ Reverse</button>
+      <button class="btn btn-secondary" onclick="transform('upper')">UPPER</button>
+      <button class="btn btn-secondary" onclick="transform('lower')">lower</button>
+      <button class="btn btn-secondary" onclick="transform('title')">Title Case</button>
+      <button class="btn btn-secondary" onclick="transform('alternating')">aLtErNaTiNg</button>
+      <button class="btn btn-secondary" onclick="transform('mirror')">🔀 Mirror</button>
+    </div>
+    <div class="result-area" style="margin-top:10px">
+      <textarea class="input" id="transform-out" rows="4" placeholder="Result..." readonly></textarea>
+      <button class="copy-overlay" onclick="copyField('transform-out')">📋</button>
+    </div>
+  </div>
+</div>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+function switchTab(id,btn){
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// Base64
+function doB64(dir){
+  const inp=document.getElementById('b64-in').value;
+  const err=document.getElementById('b64-err');
+  err.style.display='none';
+  try{
+    let out='';
+    if(dir==='encode')out=btoa(unescape(encodeURIComponent(inp)));
+    else out=decodeURIComponent(escape(atob(inp)));
+    document.getElementById('b64-out').value=out;
+    document.getElementById('b64-in-len').textContent=inp.length;
+    document.getElementById('b64-out-len').textContent=out.length;
+  }catch(e){err.style.display='block';}
+}
+function autoB64(){const v=document.getElementById('b64-in').value;if(!v){document.getElementById('b64-out').value='';return;}try{atob(v);doB64('decode');}catch{doB64('encode');}}
+
+// URL
+function doURL(dir){
+  const inp=document.getElementById('url-in').value;
+  const err=document.getElementById('url-err');
+  err.style.display='none';
+  try{
+    let out='';
+    if(dir==='encode')out=encodeURIComponent(inp);
+    else out=decodeURIComponent(inp);
+    document.getElementById('url-out').value=out;
+  }catch(e){err.style.display='block';}
+}
+function autoURL(){doURL('encode');}
+
+// HTML
+const htmlEnts={'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'};
+const htmlDec=Object.fromEntries(Object.entries(htmlEnts).map(([k,v])=>[v,k]));
+function doHTML(dir){
+  const inp=document.getElementById('html-in').value;
+  let out='';
+  if(dir==='encode')out=inp.replace(/[&<>"']/g,c=>htmlEnts[c]);
+  else out=inp.replace(/&amp;|&lt;|&gt;|&quot;|&#39;/g,c=>htmlDec[c]||c);
+  document.getElementById('html-out').value=out;
+}
+function autoHTML(){doHTML('encode');}
+
+// Hex
+function doHex(dir){
+  const inp=document.getElementById('hex-in').value;
+  const err=document.getElementById('hex-err');
+  err.style.display='none';
+  try{
+    let out='';
+    if(dir==='encode'){
+      out=Array.from(new TextEncoder().encode(inp)).map(b=>b.toString(16).padStart(2,'0')).join(' ');
+    }else{
+      const hex=inp.replace(/\s/g,'');
+      if(!/^[0-9a-fA-F]+$/.test(hex)||hex.length%2!==0){err.style.display='block';return;}
+      const bytes=hex.match(/.{2}/g).map(h=>parseInt(h,16));
+      out=new TextDecoder().decode(new Uint8Array(bytes));
+    }
+    document.getElementById('hex-out').value=out;
+  }catch(e){err.style.display='block';}
+}
+function autoHex(){doHex('encode');}
+
+// Binary
+function doBin(dir){
+  const inp=document.getElementById('bin-in').value;
+  const err=document.getElementById('bin-err');
+  err.style.display='none';
+  try{
+    let out='';
+    if(dir==='encode'){
+      out=Array.from(new TextEncoder().encode(inp)).map(b=>b.toString(2).padStart(8,'0')).join(' ');
+    }else{
+      const bins=inp.trim().split(/\s+/);
+      if(bins.some(b=>/[^01]/.test(b)||b.length!==8)){err.style.display='block';return;}
+      const bytes=bins.map(b=>parseInt(b,2));
+      out=new TextDecoder().decode(new Uint8Array(bytes));
+    }
+    document.getElementById('bin-out').value=out;
+  }catch(e){err.style.display='block';}
+}
+function autoBin(){doBin('encode');}
+
+// ASCII
+function doASCII(dir){
+  const inp=document.getElementById('ascii-in').value;
+  let out='';
+  if(dir==='encode'){
+    out=Array.from(inp).map(c=>c.charCodeAt(0)).join(' ');
+  }else{
+    out=inp.trim().split(/\s+/).map(n=>String.fromCharCode(parseInt(n))).join('');
+  }
+  document.getElementById('ascii-out').value=out;
+}
+function autoASCII(){doASCII('encode');}
+
+// Morse
+const MORSE={A:'.-',B:'-...',C:'-.-.',D:'-..',E:'.',F:'..-.',G:'--.',H:'....',I:'..',J:'.---',K:'-.-',L:'.-..',M:'--',N:'-.',O:'---',P:'.--.',Q:'--.-',R:'.-.',S:'...',T:'-',U:'..-',V:'...-',W:'.--',X:'-..-',Y:'-.--',Z:'--..',0:'-----',1:'.----',2:'..---',3:'...--',4:'....-',5:'.....',6:'-....',7:'--...',8:'---..',9:'----.','.':'.-.-.-',',':'--..--','?':'..--..','!':'-.-.--','/':'-..-.','-':'-....-','(':'-.--.',')'':'-.--.-',' ':'/'};
+const MORSE_REV=Object.fromEntries(Object.entries(MORSE).map(([k,v])=>[v,k]));
+function doMorse(dir){
+  const inp=document.getElementById('morse-in').value.toUpperCase();
+  let out='';
+  if(dir==='encode'){
+    out=inp.split('').map(c=>MORSE[c]||'').filter(Boolean).join(' ');
+  }else{
+    out=inp.split('/').map(word=>word.trim().split(' ').map(code=>MORSE_REV[code]||'').join('')).join(' ');
+  }
+  document.getElementById('morse-out').value=out.trim();
+}
+function autoMorse(){doMorse('encode');}
+
+// Morse audio
+function playMorse(){
+  const morse=document.getElementById('morse-out').value||document.getElementById('morse-in').value;
+  if(!morse)return;
+  const ctx=new(window.AudioContext||window.webkitAudioContext)();
+  const unit=0.08;
+  let t=ctx.currentTime+0.1;
+  [...morse].forEach(c=>{
+    const osc=ctx.createOscillator();
+    const gain=ctx.createGain();
+    osc.connect(gain);gain.connect(ctx.destination);
+    osc.frequency.value=600;
+    if(c==='.'){osc.start(t);osc.stop(t+unit);t+=unit*2;}
+    else if(c==='-'){osc.start(t);osc.stop(t+unit*3);t+=unit*4;}
+    else if(c===' ')t+=unit*2;
+    else if(c==='/')t+=unit*6;
+  });
+}
+
+// Morse reference
+function renderMorseRef(){
+  const ref=document.getElementById('morse-ref');
+  ref.innerHTML=Object.entries(MORSE).filter(([k])=>k!==' ').map(([k,v])=>`<div class="morse-item"><div class="morse-char">${k}</div><div class="morse-code">${v}</div></div>`).join('');
+}
+renderMorseRef();
+
+// ROT
+function doROT(){
+  const shift=parseInt(document.getElementById('rot-shift').value);
+  const inp=document.getElementById('rot-in').value;
+  const out=inp.replace(/[a-zA-Z]/g,c=>{
+    const base=c<='Z'?65:97;
+    return String.fromCharCode(((c.charCodeAt(0)-base+shift)%26)+base);
+  });
+  document.getElementById('rot-out').value=out;
+}
+function setROT(n){
+  document.getElementById('rot-shift').value=n;
+  document.getElementById('rot-val').textContent=n;
+  doROT();
+}
+
+// Transform
+function transform(type){
+  const inp=document.getElementById('transform-in').value;
+  let out='';
+  if(type==='reverse')out=[...inp].reverse().join('');
+  else if(type==='upper')out=inp.toUpperCase();
+  else if(type==='lower')out=inp.toLowerCase();
+  else if(type==='title')out=inp.replace(/\b\w/g,c=>c.toUpperCase()).replace(/\B\w/g,c=>c.toLowerCase());
+  else if(type==='alternating')out=[...inp].map((c,i)=>i%2?c.toUpperCase():c.toLowerCase()).join('');
+  else if(type==='mirror'){const mirrors={'a':'ɐ','b':'q','c':'ɔ','d':'p','e':'ǝ','f':'ɟ','g':'ƃ','h':'ɥ','i':'ı','j':'ɾ','k':'ʞ','l':'l','m':'ɯ','n':'u','o':'o','p':'d','q':'b','r':'ɹ','s':'s','t':'ʇ','u':'n','v':'ʌ','w':'ʍ','x':'x','y':'ʎ','z':'z'};out=[...inp.toLowerCase()].map(c=>mirrors[c]||c).reverse().join('');}
+  document.getElementById('transform-out').value=out;
+}
+function autoTransform(){transform('upper');}
+
+// Helpers
+function swapFields(a,b){
+  const va=document.getElementById(a).value;
+  const vb=document.getElementById(b).value;
+  document.getElementById(a).value=vb;
+  document.getElementById(b).value=va;
+}
+function clearFields(a,b){
+  document.getElementById(a).value='';
+  document.getElementById(b).value='';
+}
+function copyField(id){
+  const v=document.getElementById(id).value;
+  if(!v)return;
+  navigator.clipboard.writeText(v);
+  showToast('📋 Copied!');
+}
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2000);
+}
+</script>
+</body>
+</html>

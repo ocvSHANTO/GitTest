@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EXIF & Metadata Tool — Privacy Forge</title>
+<style>
+:root{--bg:#0a0e1a;--surface:#111827;--surface2:#1a2235;--border:#1e2d45;--accent:#00d4ff;--accent2:#7c3aed;--success:#10b981;--warning:#f59e0b;--danger:#ef4444;--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;--radius:12px;--shadow:0 4px 24px rgba(0,0,0,0.4)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;min-height:100vh;padding:16px}
+.back-btn{position:fixed;top:16px;left:16px;background:var(--surface2);border:1px solid var(--border);color:var(--text2);padding:8px 14px;border-radius:8px;text-decoration:none;font-size:13px;display:flex;align-items:center;gap:6px;transition:all 0.2s;z-index:100}
+.back-btn:hover{color:var(--accent);border-color:var(--accent)}
+.header{text-align:center;padding:32px 0 24px}
+.logo-icon{width:64px;height:64px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:16px;display:inline-flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:12px;box-shadow:0 0 32px rgba(0,212,255,0.3);animation:pulse 3s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 32px rgba(0,212,255,0.3)}50%{box-shadow:0 0 48px rgba(0,212,255,0.6)}}
+h1{font-size:clamp(22px,5vw,32px);font-weight:700}
+.subtitle{color:var(--text2);font-size:14px;margin-top:6px}
+.container{max-width:680px;margin:0 auto}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;box-shadow:var(--shadow)}
+.section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text3);margin-bottom:12px}
+.tabs{display:flex;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:4px;margin:0 auto 24px;max-width:680px;gap:4px}
+.tab{flex:1;padding:10px;border-radius:8px;border:none;background:transparent;color:var(--text2);font-size:13px;cursor:pointer;transition:all 0.2s;font-weight:500}
+.tab.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:white;box-shadow:0 2px 12px rgba(0,212,255,0.3)}
+.tab-content{display:none}.tab-content.active{display:block}
+.drop-zone{border:2px dashed var(--border);border-radius:var(--radius);padding:40px;text-align:center;cursor:pointer;transition:all 0.3s;position:relative}
+.drop-zone:hover,.drop-zone.drag-over{border-color:var(--accent);background:rgba(0,212,255,0.04)}
+.drop-icon{font-size:48px;margin-bottom:12px;display:block}
+.drop-title{font-size:16px;font-weight:600;color:var(--text);margin-bottom:4px}
+.drop-sub{font-size:13px;color:var(--text2)}
+.file-input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.image-preview{max-width:100%;max-height:280px;border-radius:8px;display:block;margin:0 auto;border:2px solid var(--border)}
+.exif-grid{display:grid;gap:8px}
+.exif-row{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;display:flex;align-items:flex-start;gap:12px;transition:all 0.2s}
+.exif-row.sensitive{border-color:rgba(239,68,68,0.4);background:rgba(239,68,68,0.05)}
+.exif-row.sensitive .exif-key{color:var(--danger)}
+.exif-icon{font-size:18px;flex-shrink:0}
+.exif-key{font-size:12px;color:var(--text2);font-weight:600;margin-bottom:2px}
+.exif-val{font-size:14px;color:var(--text);word-break:break-all}
+.sensitive-badge{display:inline-block;background:rgba(239,68,68,0.15);color:var(--danger);font-size:10px;font-weight:700;text-transform:uppercase;border-radius:4px;padding:1px 6px;margin-left:6px}
+.btn{padding:12px 20px;border-radius:var(--radius);border:none;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:white;width:100%;box-shadow:0 4px 16px rgba(0,212,255,0.25)}
+.btn-primary:hover{transform:translateY(-1px)}
+.btn-danger{background:linear-gradient(135deg,var(--danger),#dc2626);color:white;width:100%}
+.btn-secondary{background:var(--surface2);border:1px solid var(--border);color:var(--text2)}
+.btn-secondary:hover{border-color:var(--accent);color:var(--accent)}
+.btn-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.info-bar{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;display:flex;flex-wrap:wrap;gap:16px;margin-bottom:12px}
+.info-item{font-size:13px;color:var(--text2)}
+.info-item span{color:var(--accent);font-weight:600}
+.progress{height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin:8px 0}
+.progress-bar{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:2px;transition:width 0.4s ease;width:0%}
+.empty-state{text-align:center;padding:32px;color:var(--text3)}
+.empty-state .e-icon{font-size:40px;margin-bottom:8px}
+.clean-comparison{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.comp-item{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center}
+.comp-label{font-size:11px;color:var(--text3);margin-bottom:6px;text-transform:uppercase}
+.comp-val{font-size:18px;font-weight:700}
+.toggle-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+.toggle-item{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;transition:all 0.2s}
+.toggle-item.on{border-color:var(--success);background:rgba(16,185,129,0.05)}
+.toggle-label{font-size:12px;font-weight:500}
+.switch{width:32px;height:18px;background:var(--border);border-radius:9px;position:relative;transition:background 0.2s;flex-shrink:0}
+.switch.on{background:var(--success)}
+.switch::after{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:white;transition:left 0.2s}
+.switch.on::after{left:16px}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--success);color:white;padding:12px 24px;border-radius:40px;font-size:14px;font-weight:600;transition:transform 0.3s;z-index:999;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.clean-opts{display:flex;flex-direction:column;gap:8px;margin:12px 0}
+.clean-opt{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all 0.2s}
+.clean-opt:hover{border-color:var(--accent)}
+.clean-opt input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent);cursor:pointer}
+.clean-opt-info{}
+.clean-opt-title{font-size:13px;font-weight:600}
+.clean-opt-desc{font-size:12px;color:var(--text3)}
+.danger-opt{border-color:rgba(239,68,68,0.3)}
+.danger-opt:hover{border-color:var(--danger)}
+</style>
+</head>
+<body>
+<a href="../index.html" class="back-btn">← Back</a>
+<div class="header">
+  <div class="logo-icon">🖼️</div>
+  <h1>EXIF & Metadata</h1>
+  <p class="subtitle">View hidden image data • Remove it in one click</p>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('viewer',this)">🔍 EXIF Viewer</button>
+  <button class="tab" onclick="switchTab('cleaner',this)">🧹 Metadata Cleaner</button>
+  <button class="tab" onclick="switchTab('batch',this)">📦 Batch Clean</button>
+</div>
+
+<div class="container">
+
+<!-- VIEWER TAB -->
+<div id="tab-viewer" class="tab-content active">
+  <div class="card">
+    <div class="drop-zone" id="viewer-drop">
+      <input type="file" class="file-input" id="viewer-file" accept="image/*" onchange="loadViewerFile(this)">
+      <span class="drop-icon">🔍</span>
+      <div class="drop-title">Drop image to inspect</div>
+      <div class="drop-sub">JPG • PNG • WebP — Nothing uploaded, runs locally</div>
+    </div>
+  </div>
+
+  <div id="viewer-result" style="display:none">
+    <div class="card">
+      <img id="viewer-img" class="image-preview">
+      <div class="info-bar" style="margin-top:12px" id="viewer-info"></div>
+    </div>
+    <div class="card">
+      <div class="section-title">EXIF Data Found</div>
+      <div class="exif-grid" id="exif-grid"></div>
+      <div class="btn-grid">
+        <button class="btn btn-secondary" onclick="exportEXIF()">📄 Export JSON</button>
+        <button class="btn btn-danger" onclick="switchToClean()">🗑 Remove All</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CLEANER TAB -->
+<div id="tab-cleaner" class="tab-content">
+  <div class="card">
+    <div class="drop-zone" id="cleaner-drop">
+      <input type="file" class="file-input" id="cleaner-file" accept="image/jpeg,image/png,image/webp" onchange="loadCleanerFile(this)">
+      <span class="drop-icon">🧹</span>
+      <div class="drop-title">Drop image to clean</div>
+      <div class="drop-sub">Metadata removed locally • Never uploaded</div>
+    </div>
+  </div>
+
+  <div id="cleaner-result" style="display:none">
+    <div class="card">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div>
+          <div class="section-title">Original</div>
+          <img id="cleaner-img" class="image-preview" style="max-height:160px">
+        </div>
+        <div>
+          <div class="section-title">Cleaned Preview</div>
+          <img id="cleaner-clean-img" class="image-preview" style="max-height:160px">
+        </div>
+      </div>
+      <div class="clean-comparison">
+        <div class="comp-item"><div class="comp-label">Original Size</div><div class="comp-val" id="orig-size" style="color:var(--warning)">—</div></div>
+        <div class="comp-item"><div class="comp-label">Cleaned Size</div><div class="comp-val" id="clean-size" style="color:var(--success)">—</div></div>
+        <div class="comp-item"><div class="comp-label">Fields Removed</div><div class="comp-val" id="fields-removed" style="color:var(--danger)">—</div></div>
+        <div class="comp-item"><div class="comp-label">Size Saved</div><div class="comp-val" id="size-saved" style="color:var(--accent)">—</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">What Was Removed</div>
+      <div class="exif-grid" id="removed-list"></div>
+      <button class="btn btn-primary" style="margin-top:16px" onclick="downloadClean()">⬇️ Download Cleaned Image</button>
+    </div>
+  </div>
+</div>
+
+<!-- BATCH TAB -->
+<div id="tab-batch" class="tab-content">
+  <div class="card">
+    <div class="drop-zone" id="batch-drop">
+      <input type="file" class="file-input" id="batch-file" accept="image/*" multiple onchange="loadBatch(this)">
+      <span class="drop-icon">📦</span>
+      <div class="drop-title">Drop multiple images</div>
+      <div class="drop-sub">Select multiple files — All cleaned locally</div>
+    </div>
+  </div>
+  <div class="card" id="batch-result" style="display:none">
+    <div class="section-title">Processing Queue</div>
+    <div id="batch-list"></div>
+    <div class="progress"><div class="progress-bar" id="batch-progress"></div></div>
+    <button class="btn btn-primary" style="margin-top:12px" onclick="downloadBatch()">⬇️ Download All Cleaned</button>
+  </div>
+</div>
+
+</div>
+<div class="toast" id="toast">✅ Done!</div>
+<canvas id="work-canvas" style="display:none"></canvas>
+
+<script>
+let viewerFile = null, cleanerFile = null, cleanedBlob = null, batchFiles = [];
+let removedData = [];
+let exifData = {};
+
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+function switchToClean() {
+  document.querySelectorAll('.tab').forEach((b,i)=>{if(i===1)b.classList.add('active');else b.classList.remove('active')});
+  document.querySelectorAll('.tab-content').forEach((t,i)=>{if(i===1)t.classList.add('active');else t.classList.remove('active')});
+  if(viewerFile) {
+    const dt = new DataTransfer();
+    dt.items.add(viewerFile);
+    document.getElementById('cleaner-file').files = dt.files;
+    loadCleanerFile(document.getElementById('cleaner-file'));
+  }
+}
+
+// EXIF parsing
+function parseEXIF(buffer) {
+  const view = new DataView(buffer);
+  const result = {};
+  if(view.getUint16(0) !== 0xFFD8) return result; // not JPEG
+  let offset = 2;
+  while(offset < buffer.byteLength - 1) {
+    const marker = view.getUint16(offset);
+    if(marker === 0xFFE1) { // APP1 - EXIF
+      const len = view.getUint16(offset+2);
+      const exifStart = offset + 4;
+      if(view.getUint32(exifStart) === 0x45786966) { // "Exif"
+        parseIFD(view, exifStart+6, result);
+      }
+      offset += 2 + len;
+    } else if((marker & 0xFF00) === 0xFF00) {
+      if(offset+3 >= buffer.byteLength) break;
+      offset += 2 + view.getUint16(offset+2);
+    } else break;
+  }
+  return result;
+}
+
+const EXIF_TAGS = {
+  0x010e:'ImageDescription',0x010f:'Make',0x0110:'Model',0x0112:'Orientation',
+  0x011a:'XResolution',0x011b:'YResolution',0x0128:'ResolutionUnit',
+  0x0131:'Software',0x0132:'DateTime',0x013b:'Artist',0x013e:'WhitePoint',
+  0x013f:'PrimaryChromaticities',0x0211:'YCbCrCoefficients',0x0213:'YCbCrPositioning',
+  0x0214:'ReferenceBlackWhite',0x8298:'Copyright',0x8769:'ExifIFDPointer',
+  0x8825:'GPSIFDPointer',0x9003:'DateTimeOriginal',0x9004:'DateTimeDigitized',
+  0x9010:'OffsetTime',0x9290:'SubSecTime',0xa001:'ColorSpace',
+  0xa002:'PixelXDimension',0xa003:'PixelYDimension',0xa004:'RelatedSoundFile',
+  0xa420:'ImageUniqueID',0xa430:'CameraOwnerName',0xa431:'BodySerialNumber',
+  0xa432:'LensSpecification',0xa433:'LensMake',0xa434:'LensModel',
+  0xa435:'LensSerialNumber',
+};
+const GPS_TAGS = {0:'GPSVersionID',1:'GPSLatitudeRef',2:'GPSLatitude',3:'GPSLongitudeRef',4:'GPSLongitude',5:'GPSAltitudeRef',6:'GPSAltitude',7:'GPSTimestamp',12:'GPSSpeedRef',13:'GPSSpeed',16:'GPSImgDirectionRef',17:'GPSImgDirection',23:'GPSDestBearingRef',24:'GPSDestBearing',29:'GPSDateStamp',31:'GPSHPositioningError'};
+const SENSITIVE_TAGS = new Set(['Make','Model','Software','Artist','Copyright','DateTime','DateTimeOriginal','DateTimeDigitized','GPSLatitude','GPSLongitude','GPSAltitude','GPSLatitudeRef','GPSLongitudeRef','CameraOwnerName','BodySerialNumber','LensSerialNumber','ImageUniqueID','GPSTimestamp','GPSDateStamp','GPSSpeed','GPSImgDirection']);
+
+function parseIFD(view, start, result) {
+  try {
+    const littleEndian = view.getUint16(start) === 0x4949;
+    const ifdOffset = view.getUint32(start+4, littleEndian);
+    readIFD(view, start, start+ifdOffset, result, littleEndian, EXIF_TAGS, GPS_TAGS);
+  } catch(e) {}
+}
+
+function readIFD(view, tiffStart, ifdOffset, result, le, tags, gpsTags) {
+  try {
+    const count = view.getUint16(ifdOffset, le);
+    for(let i=0; i<count; i++) {
+      const off = ifdOffset + 2 + i*12;
+      const tag = view.getUint16(off, le);
+      const type = view.getUint16(off+2, le);
+      const num = view.getUint32(off+4, le);
+      const valOff = off+8;
+      const name = tags[tag] || `Tag_${tag.toString(16)}`;
+      let val = '';
+      if(type===2) { // ASCII
+        const dataOff = num>4 ? view.getUint32(valOff,le)+tiffStart : valOff;
+        val = readASCII(view, dataOff, num);
+      } else if(type===5||type===10) { // RATIONAL
+        const dataOff = view.getUint32(valOff,le)+tiffStart;
+        const n=view.getUint32(dataOff,le), d=view.getUint32(dataOff+4,le);
+        val = d?`${(n/d).toFixed(4)}`:`${n}/${d}`;
+      } else if(type===3) val = view.getUint16(valOff,le);
+      else if(type===4) val = view.getUint32(valOff,le);
+      else val = '(binary)';
+      result[name] = String(val).replace(/\0/g,'').trim();
+      if((name==='ExifIFDPointer'||name==='GPSIFDPointer') && typeof val==='number') {
+        readIFD(view, tiffStart, tiffStart+val, result, le, name==='GPSIFDPointer'?gpsTags:tags, gpsTags);
+      }
+    }
+  } catch(e) {}
+}
+
+function readASCII(view, offset, len) {
+  let s='';
+  for(let i=0;i<len && offset+i<view.byteLength;i++) {
+    const c=view.getUint8(offset+i);
+    if(c===0) break;
+    s+=String.fromCharCode(c);
+  }
+  return s;
+}
+
+const TAG_ICONS = {Make:'📷',Model:'📷',Software:'💻',Artist:'👤',Copyright:'©',DateTime:'🕐',DateTimeOriginal:'🕐',DateTimeDigitized:'🕐',GPSLatitude:'📍',GPSLongitude:'📍',GPSAltitude:'🗻',CameraOwnerName:'👤',BodySerialNumber:'🔢',LensModel:'🔭',LensSerialNumber:'🔢',ImageUniqueID:'🆔',GPSSpeed:'🚀',PixelXDimension:'📐',PixelYDimension:'📐',ColorSpace:'🎨',Orientation:'🔄'};
+
+function loadViewerFile(input) {
+  const file = input.files[0];
+  if(!file) return;
+  viewerFile = file;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const buffer = e.target.result;
+    exifData = parseEXIF(buffer);
+    const img = document.getElementById('viewer-img');
+    img.src = URL.createObjectURL(file);
+    document.getElementById('viewer-result').style.display='block';
+    document.getElementById('viewer-info').innerHTML = `
+      <div class="info-item">File: <span>${file.name}</span></div>
+      <div class="info-item">Size: <span>${formatSize(file.size)}</span></div>
+      <div class="info-item">Type: <span>${file.type||'Unknown'}</span></div>
+      <div class="info-item">Fields: <span>${Object.keys(exifData).length}</span></div>
+    `;
+    renderEXIF(exifData);
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function renderEXIF(data) {
+  const grid = document.getElementById('exif-grid');
+  const keys = Object.keys(data);
+  if(!keys.length) {
+    grid.innerHTML = '<div class="empty-state"><div class="e-icon">✅</div><div>No EXIF metadata found</div></div>';
+    return;
+  }
+  grid.innerHTML = keys.map(k => {
+    const isSensitive = SENSITIVE_TAGS.has(k);
+    const icon = TAG_ICONS[k] || '📌';
+    return `<div class="exif-row${isSensitive?' sensitive':''}">
+      <span class="exif-icon">${icon}</span>
+      <div>
+        <div class="exif-key">${k}${isSensitive?'<span class="sensitive-badge">sensitive</span>':''}</div>
+        <div class="exif-val">${data[k]||'—'}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function exportEXIF() {
+  const json = JSON.stringify(exifData, null, 2);
+  const blob = new Blob([json],{type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'exif-data.json';
+  a.click();
+  showToast('📄 EXIF exported!');
+}
+
+function loadCleanerFile(input) {
+  const file = input.files[0];
+  if(!file) return;
+  cleanerFile = file;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const buffer = e.target.result;
+    const origEXIF = parseEXIF(buffer);
+    const img = document.getElementById('cleaner-img');
+    img.src = URL.createObjectURL(file);
+    document.getElementById('cleaner-result').style.display='block';
+    document.getElementById('orig-size').textContent = formatSize(file.size);
+    // Strip EXIF
+    stripEXIF(buffer, file.type).then(cleanedBuf => {
+      cleanedBlob = new Blob([cleanedBuf], {type: file.type||'image/jpeg'});
+      const cleanURL = URL.createObjectURL(cleanedBlob);
+      document.getElementById('cleaner-clean-img').src = cleanURL;
+      document.getElementById('clean-size').textContent = formatSize(cleanedBlob.size);
+      const saved = file.size - cleanedBlob.size;
+      document.getElementById('size-saved').textContent = saved>0?formatSize(saved):'~0 B';
+      const origKeys = Object.keys(origEXIF);
+      document.getElementById('fields-removed').textContent = origKeys.length;
+      const removedList = document.getElementById('removed-list');
+      if(origKeys.length) {
+        removedList.innerHTML = origKeys.map(k=>`<div class="exif-row sensitive"><span class="exif-icon">🗑</span><div><div class="exif-key">${k}</div><div class="exif-val" style="color:var(--text3);text-decoration:line-through">${origEXIF[k]}</div></div></div>`).join('');
+      } else {
+        removedList.innerHTML = '<div class="empty-state"><div class="e-icon">✅</div><div>No metadata found to remove</div></div>';
+      }
+    });
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+async function stripEXIF(buffer, type) {
+  // For JPEG: remove APP1 (EXIF) segments
+  if(type === 'image/jpeg' || type === '') {
+    const bytes = new Uint8Array(buffer);
+    const result = [];
+    let i = 0;
+    // Keep SOI (FFD8)
+    if(bytes[0]===0xFF && bytes[1]===0xD8) { result.push(0xFF, 0xD8); i=2; }
+    while(i < bytes.length-1) {
+      if(bytes[i]===0xFF) {
+        const marker = bytes[i+1];
+        if(marker === 0xE1) { // APP1 = EXIF
+          const segLen = (bytes[i+2]<<8)|bytes[i+3];
+          i += 2 + segLen; // skip
+        } else {
+          result.push(bytes[i], bytes[i+1]);
+          if(marker === 0xD9) break; // EOI
+          if(marker !== 0xD8 && marker !== 0xD9) {
+            const segLen = (bytes[i+2]<<8)|bytes[i+3];
+            result.push(bytes[i+2], bytes[i+3]);
+            for(let j=i+4; j<i+2+segLen; j++) result.push(bytes[j]);
+            i += 2+segLen;
+          } else i+=2;
+        }
+      } else {
+        result.push(bytes[i]); i++;
+      }
+    }
+    return new Uint8Array(result).buffer;
+  } else {
+    // For PNG/WebP: redraw on canvas to strip metadata
+    return new Promise(resolve => {
+      const blob = new Blob([buffer], {type});
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.getElementById('work-canvas');
+        canvas.width = img.width; canvas.height = img.height;
+        canvas.getContext('2d').drawImage(img, 0, 0);
+        canvas.toBlob(b => {
+          b.arrayBuffer().then(resolve);
+          URL.revokeObjectURL(url);
+        }, type==='image/webp'?'image/webp':'image/png', 0.95);
+      };
+      img.src = url;
+    });
+  }
+}
+
+function downloadClean() {
+  if(!cleanedBlob||!cleanerFile) return;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(cleanedBlob);
+  a.download = 'clean_'+cleanerFile.name;
+  a.click();
+  showToast('⬇️ Cleaned image downloaded!');
+}
+
+function loadBatch(input) {
+  batchFiles = Array.from(input.files);
+  const list = document.getElementById('batch-list');
+  document.getElementById('batch-result').style.display='block';
+  list.innerHTML = batchFiles.map((f,i)=>`
+    <div class="exif-row" id="batch-item-${i}">
+      <span class="exif-icon">🖼️</span>
+      <div style="flex:1"><div class="exif-key">${f.name}</div><div class="exif-val">${formatSize(f.size)}</div></div>
+      <span id="batch-status-${i}" style="font-size:12px;color:var(--text3)">Pending</span>
+    </div>`).join('');
+  processBatch();
+}
+
+const batchResults = [];
+async function processBatch() {
+  batchResults.length = 0;
+  for(let i=0; i<batchFiles.length; i++) {
+    const f = batchFiles[i];
+    const buf = await f.arrayBuffer();
+    const cleaned = await stripEXIF(buf, f.type);
+    batchResults.push({name:'clean_'+f.name, blob:new Blob([cleaned],{type:f.type||'image/jpeg'})});
+    document.getElementById('batch-status-'+i).textContent='✅ Done';
+    document.getElementById('batch-status-'+i).style.color='var(--success)';
+    document.getElementById('batch-progress').style.width=`${((i+1)/batchFiles.length*100).toFixed(0)}%`;
+  }
+  showToast(`✅ ${batchFiles.length} files cleaned!`);
+}
+
+async function downloadBatch() {
+  for(const r of batchResults) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(r.blob);
+    a.download = r.name;
+    a.click();
+    await new Promise(res=>setTimeout(res,200));
+  }
+  showToast('⬇️ All files downloaded!');
+}
+
+function formatSize(bytes) {
+  if(bytes<1024) return bytes+'B';
+  if(bytes<1048576) return (bytes/1024).toFixed(1)+'KB';
+  return (bytes/1048576).toFixed(2)+'MB';
+}
+
+function showToast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// Drag and drop
+['viewer-drop','cleaner-drop','batch-drop'].forEach(id=>{
+  const el = document.getElementById(id);
+  el.addEventListener('dragover',e=>{e.preventDefault();el.classList.add('drag-over')});
+  el.addEventListener('dragleave',()=>el.classList.remove('drag-over'));
+  el.addEventListener('drop',e=>{
+    e.preventDefault(); el.classList.remove('drag-over');
+    const files = e.dataTransfer.files;
+    if(!files.length) return;
+    const inputId = id.replace('-drop','-file');
+    const input = document.getElementById(inputId);
+    const dt = new DataTransfer();
+    Array.from(files).forEach(f=>dt.items.add(f));
+    input.files = dt.files;
+    input.dispatchEvent(new Event('change'));
+  });
+});
+</script>
+</body>
+</html>

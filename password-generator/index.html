@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Password Generator — Privacy Forge</title>
+<style>
+:root {
+  --bg: #0a0e1a;
+  --surface: #111827;
+  --surface2: #1a2235;
+  --border: #1e2d45;
+  --accent: #00d4ff;
+  --accent2: #7c3aed;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --text: #e2e8f0;
+  --text2: #94a3b8;
+  --text3: #64748b;
+  --radius: 12px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', system-ui, sans-serif;
+  min-height: 100vh;
+  padding: 16px;
+}
+.header {
+  text-align: center;
+  padding: 32px 0 24px;
+}
+.logo-icon {
+  width: 64px; height: 64px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-radius: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  margin-bottom: 12px;
+  box-shadow: 0 0 32px rgba(0,212,255,0.3);
+  animation: pulse 3s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%,100%{box-shadow:0 0 32px rgba(0,212,255,0.3)}
+  50%{box-shadow:0 0 48px rgba(0,212,255,0.6)}
+}
+.back-btn {
+  position: fixed; top:16px; left:16px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  padding: 8px 14px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 13px;
+  display: flex; align-items: center; gap: 6px;
+  transition: all 0.2s;
+  z-index: 100;
+}
+.back-btn:hover { color: var(--accent); border-color: var(--accent); }
+h1 { font-size: clamp(22px, 5vw, 32px); font-weight: 700; color: var(--text); }
+.subtitle { color: var(--text2); font-size: 14px; margin-top: 6px; }
+.tabs {
+  display: flex;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 4px;
+  margin: 24px auto;
+  max-width: 600px;
+  gap: 4px;
+  overflow-x: auto;
+}
+.tab {
+  flex: 1;
+  padding: 10px 8px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--text2);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  font-weight: 500;
+}
+.tab.active {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: white;
+  box-shadow: 0 2px 12px rgba(0,212,255,0.3);
+}
+.container { max-width: 600px; margin: 0 auto; }
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
+.password-display {
+  background: var(--surface2);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 16px;
+  font-family: 'Courier New', monospace;
+  font-size: clamp(14px, 4vw, 20px);
+  word-break: break-all;
+  min-height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  transition: border-color 0.3s;
+  margin-bottom: 12px;
+}
+.password-display:hover { border-color: var(--accent); }
+.password-text { flex: 1; line-height: 1.5; }
+.copy-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  width: 40px; height: 40px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.copy-btn:hover { background: var(--accent); color: white; border-color: var(--accent); }
+.copy-btn.copied { background: var(--success); color: white; border-color: var(--success); }
+.strength-bar-wrap { margin-bottom: 16px; }
+.strength-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px; color: var(--text2); margin-bottom: 6px;
+}
+.strength-bars {
+  display: flex; gap: 4px; margin-bottom: 4px;
+}
+.strength-bar {
+  flex: 1; height: 4px;
+  border-radius: 2px;
+  background: var(--border);
+  transition: background 0.3s;
+}
+.strength-bar.active-weak { background: var(--danger); }
+.strength-bar.active-fair { background: var(--warning); }
+.strength-bar.active-good { background: #84cc16; }
+.strength-bar.active-strong { background: var(--success); }
+.entropy-info {
+  font-size: 11px; color: var(--text3);
+  display: flex; gap: 12px; flex-wrap: wrap;
+}
+.entropy-info span { color: var(--accent); }
+label { font-size: 13px; color: var(--text2); font-weight: 500; }
+.range-wrap { margin: 12px 0; }
+.range-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+input[type=range] {
+  width: 100%; height: 6px;
+  -webkit-appearance: none;
+  background: var(--border);
+  border-radius: 3px;
+  outline: none;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  cursor: pointer;
+  box-shadow: 0 0 8px rgba(0,212,255,0.5);
+}
+.length-num {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 700; font-size: 20px;
+}
+.toggle-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 12px 0;
+}
+.toggle-item {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+}
+.toggle-item:hover { border-color: var(--accent); }
+.toggle-item.on { border-color: var(--accent); background: rgba(0,212,255,0.05); }
+.toggle-label { font-size: 13px; font-weight: 500; }
+.toggle-desc { font-size: 11px; color: var(--text3); }
+.switch {
+  width: 36px; height: 20px;
+  background: var(--border);
+  border-radius: 10px;
+  position: relative;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.switch.on { background: var(--accent); }
+.switch::after {
+  content:'';
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: white;
+  transition: left 0.2s;
+}
+.switch.on::after { left: 19px; }
+.btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.btn {
+  padding: 14px;
+  border-radius: var(--radius);
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: white;
+  grid-column: 1 / -1;
+  box-shadow: 0 4px 16px rgba(0,212,255,0.25);
+}
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(0,212,255,0.4); }
+.btn-secondary {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text2);
+}
+.btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+.section-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text3);
+  margin-bottom: 12px;
+}
+.history-item {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-family: monospace;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+  word-break: break-all;
+}
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+.custom-input {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  margin-top: 8px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.custom-input:focus { border-color: var(--accent); }
+.word-count-wrap { margin: 12px 0; }
+.generated-history { max-height: 200px; overflow-y: auto; }
+.pin-sizes { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
+.pin-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text2);
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+.pin-btn.active, .pin-btn:hover { background: var(--accent); color: white; border-color: var(--accent); }
+.passphrase-word {
+  display: inline-block;
+  background: rgba(0,212,255,0.08);
+  border: 1px solid rgba(0,212,255,0.2);
+  border-radius: 6px;
+  padding: 4px 10px;
+  margin: 3px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+}
+.sep-btns { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
+.sep-btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text2);
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+.sep-btn.active { background: var(--accent2); color: white; border-color: var(--accent2); }
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+  background: var(--success);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 40px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: transform 0.3s ease;
+  z-index: 999;
+  white-space: nowrap;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<a href="../index.html" class="back-btn">← Back</a>
+<div class="header">
+  <div class="logo-icon">🔑</div>
+  <h1>Password Generator</h1>
+  <p class="subtitle">Generate secure passwords locally • Nothing leaves your device</p>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('strong')">💪 Strong</button>
+  <button class="tab" onclick="switchTab('memorable')">🧠 Memorable</button>
+  <button class="tab" onclick="switchTab('pin')">🔢 PIN</button>
+  <button class="tab" onclick="switchTab('passphrase')">📝 Passphrase</button>
+  <button class="tab" onclick="switchTab('custom')">⚙️ Custom</button>
+</div>
+
+<div class="container">
+
+<!-- Strong Password -->
+<div id="tab-strong" class="tab-content active">
+  <div class="card">
+    <div class="section-title">Generated Password</div>
+    <div class="password-display" id="pwd-display-strong">
+      <span class="password-text" id="pwd-text-strong">Click Generate</span>
+      <button class="copy-btn" id="copy-strong" onclick="copyPass('strong')" title="Copy">📋</button>
+    </div>
+    <div class="strength-bar-wrap">
+      <div class="strength-label">
+        <span>Strength</span>
+        <span id="strength-label-strong">—</span>
+      </div>
+      <div class="strength-bars" id="strength-bars-strong">
+        <div class="strength-bar"></div>
+        <div class="strength-bar"></div>
+        <div class="strength-bar"></div>
+        <div class="strength-bar"></div>
+      </div>
+      <div class="entropy-info">
+        Entropy: <span id="entropy-strong">—</span> bits &nbsp;|&nbsp; Charset: <span id="charset-strong">—</span>
+      </div>
+    </div>
+
+    <div class="range-wrap">
+      <div class="range-header">
+        <label>Length</label>
+        <span class="length-num" id="len-val-strong">16</span>
+      </div>
+      <input type="range" id="len-strong" min="8" max="128" value="16"
+        oninput="document.getElementById('len-val-strong').textContent=this.value; generateStrong()">
+    </div>
+
+    <div class="section-title">Character Sets</div>
+    <div class="toggle-grid">
+      <div class="toggle-item on" id="tog-upper" onclick="toggleOpt('upper')">
+        <div><div class="toggle-label">Uppercase</div><div class="toggle-desc">A-Z</div></div>
+        <div class="switch on" id="sw-upper"></div>
+      </div>
+      <div class="toggle-item on" id="tog-lower" onclick="toggleOpt('lower')">
+        <div><div class="toggle-label">Lowercase</div><div class="toggle-desc">a-z</div></div>
+        <div class="switch on" id="sw-lower"></div>
+      </div>
+      <div class="toggle-item on" id="tog-nums" onclick="toggleOpt('nums')">
+        <div><div class="toggle-label">Numbers</div><div class="toggle-desc">0-9</div></div>
+        <div class="switch on" id="sw-nums"></div>
+      </div>
+      <div class="toggle-item on" id="tog-syms" onclick="toggleOpt('syms')">
+        <div><div class="toggle-label">Symbols</div><div class="toggle-desc">!@#$%</div></div>
+        <div class="switch on" id="sw-syms"></div>
+      </div>
+      <div class="toggle-item" id="tog-ambig" onclick="toggleOpt('ambig')">
+        <div><div class="toggle-label">Ambiguous</div><div class="toggle-desc">0O1Il</div></div>
+        <div class="switch" id="sw-ambig"></div>
+      </div>
+      <div class="toggle-item" id="tog-similar" onclick="toggleOpt('similar')">
+        <div><div class="toggle-label">No Similar</div><div class="toggle-desc">iI1lL0O</div></div>
+        <div class="switch" id="sw-similar"></div>
+      </div>
+    </div>
+
+    <div class="btn-grid" style="margin-top:16px">
+      <button class="btn btn-primary" onclick="generateStrong()">🔄 Generate</button>
+      <button class="btn btn-secondary" onclick="generateBulk()">📦 Bulk (10)</button>
+      <button class="btn btn-secondary" onclick="clearHistory()">🗑 Clear History</button>
+    </div>
+  </div>
+
+  <div class="card" id="history-card" style="display:none">
+    <div class="section-title">Recent Passwords</div>
+    <div class="generated-history" id="pwd-history"></div>
+  </div>
+</div>
+
+<!-- Memorable -->
+<div id="tab-memorable" class="tab-content">
+  <div class="card">
+    <div class="section-title">Generated Password</div>
+    <div class="password-display">
+      <span class="password-text" id="pwd-text-memo">Click Generate</span>
+      <button class="copy-btn" id="copy-memo" onclick="copyPass('memo')" title="Copy">📋</button>
+    </div>
+    <div class="strength-bar-wrap">
+      <div class="strength-label"><span>Strength</span><span id="strength-label-memo">—</span></div>
+      <div class="strength-bars" id="strength-bars-memo">
+        <div class="strength-bar"></div><div class="strength-bar"></div>
+        <div class="strength-bar"></div><div class="strength-bar"></div>
+      </div>
+    </div>
+    <div class="section-title">Pattern</div>
+    <div class="toggle-grid">
+      <div class="toggle-item on" id="tog-m-caps" onclick="toggleMemOpt('caps')">
+        <div><div class="toggle-label">Capitalize</div><div class="toggle-desc">First letter</div></div>
+        <div class="switch on" id="sw-m-caps"></div>
+      </div>
+      <div class="toggle-item on" id="tog-m-nums" onclick="toggleMemOpt('mnums')">
+        <div><div class="toggle-label">Numbers</div><div class="toggle-desc">Add digits</div></div>
+        <div class="switch on" id="sw-m-mnums"></div>
+      </div>
+      <div class="toggle-item" id="tog-m-syms" onclick="toggleMemOpt('msyms')">
+        <div><div class="toggle-label">Symbols</div><div class="toggle-desc">Add !@#</div></div>
+        <div class="switch" id="sw-m-msyms"></div>
+      </div>
+      <div class="toggle-item on" id="tog-m-leet" onclick="toggleMemOpt('leet')">
+        <div><div class="toggle-label">Leet</div><div class="toggle-desc">a→@, e→3</div></div>
+        <div class="switch on" id="sw-m-leet"></div>
+      </div>
+    </div>
+    <button class="btn btn-primary" style="width:100%;margin-top:16px" onclick="generateMemorable()">🔄 Generate Memorable</button>
+  </div>
+</div>
+
+<!-- PIN -->
+<div id="tab-pin" class="tab-content">
+  <div class="card">
+    <div class="section-title">Generated PIN</div>
+    <div class="password-display" style="font-size:32px;letter-spacing:8px;justify-content:center">
+      <span class="password-text" id="pwd-text-pin" style="text-align:center">——</span>
+      <button class="copy-btn" id="copy-pin" onclick="copyPass('pin')" title="Copy">📋</button>
+    </div>
+    <div class="section-title">PIN Length</div>
+    <div class="pin-sizes">
+      <button class="pin-btn active" onclick="selectPin(4,this)">4 digit</button>
+      <button class="pin-btn" onclick="selectPin(6,this)">6 digit</button>
+      <button class="pin-btn" onclick="selectPin(8,this)">8 digit</button>
+      <button class="pin-btn" onclick="selectPin(10,this)">10 digit</button>
+    </div>
+    <div class="toggle-item" id="tog-no-repeat" onclick="togglePinOpt('norepeat')">
+      <div><div class="toggle-label">No Repeating Digits</div><div class="toggle-desc">More secure PIN</div></div>
+      <div class="switch" id="sw-no-repeat"></div>
+    </div>
+    <div class="toggle-item" style="margin-top:8px" id="tog-no-seq" onclick="togglePinOpt('noseq')">
+      <div><div class="toggle-label">No Sequential Digits</div><div class="toggle-desc">Avoid 1234</div></div>
+      <div class="switch" id="sw-no-seq"></div>
+    </div>
+    <button class="btn btn-primary" style="width:100%;margin-top:16px" onclick="generatePIN()">🔄 Generate PIN</button>
+  </div>
+</div>
+
+<!-- Passphrase -->
+<div id="tab-passphrase" class="tab-content">
+  <div class="card">
+    <div class="section-title">Generated Passphrase</div>
+    <div class="password-display" style="flex-direction:column;align-items:flex-start;gap:8px">
+      <div id="pwd-text-phrase" style="word-break:break-word;line-height:1.8;width:100%">Click Generate</div>
+      <div style="display:flex;gap:8px;align-self:flex-end">
+        <button class="copy-btn" id="copy-phrase" onclick="copyPass('phrase')" title="Copy">📋</button>
+      </div>
+    </div>
+    <div class="strength-bar-wrap">
+      <div class="strength-label"><span>Strength</span><span id="strength-label-phrase">—</span></div>
+      <div class="strength-bars" id="strength-bars-phrase">
+        <div class="strength-bar"></div><div class="strength-bar"></div>
+        <div class="strength-bar"></div><div class="strength-bar"></div>
+      </div>
+      <div class="entropy-info">Entropy: <span id="entropy-phrase">—</span> bits</div>
+    </div>
+    <div class="range-wrap">
+      <div class="range-header"><label>Word Count</label><span class="length-num" id="word-count-val">4</span></div>
+      <input type="range" id="word-count" min="3" max="10" value="4"
+        oninput="document.getElementById('word-count-val').textContent=this.value;generatePassphrase()">
+    </div>
+    <div class="section-title">Separator</div>
+    <div class="sep-btns">
+      <button class="sep-btn active" onclick="selectSep('-',this)">- Dash</button>
+      <button class="sep-btn" onclick="selectSep('.',this)">. Dot</button>
+      <button class="sep-btn" onclick="selectSep('_',this)">_ Underscore</button>
+      <button class="sep-btn" onclick="selectSep(' ',this)">  Space</button>
+      <button class="sep-btn" onclick="selectSep('',this)">None</button>
+      <button class="sep-btn" onclick="selectSep('#',this)"># Hash</button>
+    </div>
+    <div class="toggle-grid">
+      <div class="toggle-item on" id="tog-p-cap" onclick="togglePhraseOpt('pcap')">
+        <div><div class="toggle-label">Capitalize</div></div>
+        <div class="switch on" id="sw-p-pcap"></div>
+      </div>
+      <div class="toggle-item on" id="tog-p-num" onclick="togglePhraseOpt('pnum')">
+        <div><div class="toggle-label">Add Number</div></div>
+        <div class="switch on" id="sw-p-pnum"></div>
+      </div>
+    </div>
+    <button class="btn btn-primary" style="width:100%;margin-top:16px" onclick="generatePassphrase()">🔄 Generate Passphrase</button>
+  </div>
+</div>
+
+<!-- Custom -->
+<div id="tab-custom" class="tab-content">
+  <div class="card">
+    <div class="section-title">Generated Password</div>
+    <div class="password-display">
+      <span class="password-text" id="pwd-text-custom">Click Generate</span>
+      <button class="copy-btn" id="copy-custom" onclick="copyPass('custom')" title="Copy">📋</button>
+    </div>
+    <div class="section-title">Custom Character Set</div>
+    <input type="text" class="custom-input" id="custom-chars" placeholder="Enter your custom characters..."
+      value="ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%">
+    <div class="range-wrap" style="margin-top:16px">
+      <div class="range-header"><label>Length</label><span class="length-num" id="len-val-custom">20</span></div>
+      <input type="range" id="len-custom" min="4" max="256" value="20"
+        oninput="document.getElementById('len-val-custom').textContent=this.value;generateCustom()">
+    </div>
+    <div class="section-title">Must Include</div>
+    <div class="toggle-grid">
+      <div class="toggle-item on" id="tog-c-upper" onclick="toggleCustomMust('cupper')">
+        <div><div class="toggle-label">Uppercase</div></div>
+        <div class="switch on" id="sw-c-cupper"></div>
+      </div>
+      <div class="toggle-item on" id="tog-c-lower" onclick="toggleCustomMust('clower')">
+        <div><div class="toggle-label">Lowercase</div></div>
+        <div class="switch on" id="sw-c-clower"></div>
+      </div>
+      <div class="toggle-item on" id="tog-c-num" onclick="toggleCustomMust('cnum')">
+        <div><div class="toggle-label">Number</div></div>
+        <div class="switch on" id="sw-c-cnum"></div>
+      </div>
+      <div class="toggle-item on" id="tog-c-sym" onclick="toggleCustomMust('csym')">
+        <div><div class="toggle-label">Symbol</div></div>
+        <div class="switch on" id="sw-c-csym"></div>
+      </div>
+    </div>
+    <button class="btn btn-primary" style="width:100%;margin-top:16px" onclick="generateCustom()">🔄 Generate</button>
+  </div>
+</div>
+
+</div>
+
+<div class="toast" id="toast">✅ Copied to clipboard!</div>
+
+<script>
+const wordList = ['apple','ocean','forest','river','castle','dragon','shadow','silver','thunder','crystal','morning','garden','stone','flame','winter','eagle','bright','storm','valley','portal','arctic','cosmic','lunar','solar','phantom','echo','zenith','nova','titan','cipher','nexus','pulse','quantum','vector','matrix','digital','analog','signal','binary','fusion','delta','alpha','beta','gamma','omega','sigma','rapid','swift','bold','calm','deep','free','gold','jade','mars','peak','reef','sage','tide','wind','dawn','dusk','fire','moon','rain','rose','sea','sky','star','sun','wave'];
+
+const opts = { upper:true, lower:true, nums:true, syms:true, ambig:false, similar:false };
+const memOpts = { caps:true, mnums:true, msyms:false, leet:true };
+const pinOpts = { norepeat:false, noseq:false };
+const phraseOpts = { pcap:true, pnum:true };
+const customMust = { cupper:true, clower:true, cnum:true, csym:true };
+let pinLen = 4;
+let phraseSep = '-';
+
+function switchTab(id) {
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+function cryptoRand(max) {
+  const arr = new Uint32Array(1);
+  crypto.getRandomValues(arr);
+  return arr[0] % max;
+}
+
+function toggleOpt(key) {
+  opts[key] = !opts[key];
+  const on = opts[key];
+  document.getElementById('tog-'+key).classList.toggle('on', on);
+  document.getElementById('sw-'+key).classList.toggle('on', on);
+  generateStrong();
+}
+function toggleMemOpt(key) {
+  memOpts[key] = !memOpts[key];
+  const on = memOpts[key];
+  document.getElementById('tog-m-'+key).classList.toggle('on', on);
+  document.getElementById('sw-m-'+key).classList.toggle('on', on);
+}
+function togglePinOpt(key) {
+  pinOpts[key] = !pinOpts[key];
+  const on = pinOpts[key];
+  document.getElementById('tog-no-'+key.replace('no','')).classList.toggle('on', on);
+  document.getElementById('sw-no-'+key.replace('no','')).classList.toggle('on', on);
+}
+function togglePhraseOpt(key) {
+  phraseOpts[key] = !phraseOpts[key];
+  const on = phraseOpts[key];
+  document.getElementById('tog-p-'+key.slice(1)).classList.toggle('on', on);
+  document.getElementById('sw-p-'+key).classList.toggle('on', on);
+}
+function toggleCustomMust(key) {
+  customMust[key] = !customMust[key];
+  const on = customMust[key];
+  document.getElementById('tog-c-'+key.slice(1)).classList.toggle('on', on);
+  document.getElementById('sw-c-'+key).classList.toggle('on', on);
+}
+
+function buildCharset() {
+  let c = '';
+  const UP = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const LO = 'abcdefghijklmnopqrstuvwxyz';
+  const NU = '0123456789';
+  const SY = '!@#$%^&*()_+-=[]{}|;:,.<>?';
+  const AMB = '0O1Il';
+  const SIM = 'iI1lL0O';
+  if(opts.upper) c += UP;
+  if(opts.lower) c += LO;
+  if(opts.nums) c += NU;
+  if(opts.syms) c += SY;
+  if(opts.ambig) { [].forEach.call(AMB, ch => c = c.replace(new RegExp(ch,'g'),'')); }
+  if(opts.similar) { [].forEach.call(SIM, ch => c = c.replace(new RegExp(ch,'g'),'')); }
+  return [...new Set(c.split(''))].join('');
+}
+
+function genPass(charset, len) {
+  if(!charset) return '';
+  return Array.from({length:len}, () => charset[cryptoRand(charset.length)]).join('');
+}
+
+function calcEntropy(charsetLen, len) {
+  return Math.floor(len * Math.log2(charsetLen));
+}
+
+function calcStrength(pwd) {
+  const e = calcEntropy([...new Set(pwd.split(''))].length, pwd.length);
+  if(e < 28) return 0;
+  if(e < 40) return 1;
+  if(e < 60) return 2;
+  return 3;
+}
+
+function updateStrengthUI(barsId, labelId, pwd) {
+  const s = calcStrength(pwd);
+  const labels = ['Weak','Fair','Good','Strong'];
+  const cls = ['active-weak','active-fair','active-good','active-strong'];
+  const bars = document.querySelectorAll('#'+barsId+' .strength-bar');
+  bars.forEach((b,i) => { b.className = 'strength-bar'; if(i<=s) b.classList.add(cls[s]); });
+  document.getElementById(labelId).textContent = labels[s];
+  document.getElementById(labelId).style.color = ['#ef4444','#f59e0b','#84cc16','#10b981'][s];
+}
+
+let history = [];
+function generateStrong() {
+  const cs = buildCharset();
+  if(!cs) return;
+  const len = parseInt(document.getElementById('len-strong').value);
+  const pwd = genPass(cs, len);
+  document.getElementById('pwd-text-strong').textContent = pwd;
+  updateStrengthUI('strength-bars-strong','strength-label-strong',pwd);
+  const e = calcEntropy(cs.length, len);
+  document.getElementById('entropy-strong').textContent = e;
+  document.getElementById('charset-strong').textContent = cs.length+' chars';
+  history.unshift(pwd);
+  if(history.length > 10) history.pop();
+  updateHistory();
+}
+
+function updateHistory() {
+  const h = document.getElementById('pwd-history');
+  const card = document.getElementById('history-card');
+  if(!history.length){card.style.display='none';return;}
+  card.style.display='block';
+  h.innerHTML = history.map((p,i) => `
+    <div class="history-item">
+      <span style="font-size:11px;color:var(--text3)">#${i+1}</span>
+      <span style="flex:1">${p}</span>
+      <button class="copy-btn" onclick="copyText('${p}')" title="Copy">📋</button>
+    </div>`).join('');
+}
+
+function generateBulk() {
+  const cs = buildCharset();
+  const len = parseInt(document.getElementById('len-strong').value);
+  for(let i=0;i<10;i++){
+    history.unshift(genPass(cs,len));
+  }
+  history = history.slice(0,10);
+  const last = history[0];
+  document.getElementById('pwd-text-strong').textContent = last;
+  updateStrengthUI('strength-bars-strong','strength-label-strong',last);
+  updateHistory();
+}
+
+function clearHistory() { history=[]; updateHistory(); }
+
+function generateMemorable() {
+  const base = wordList[cryptoRand(wordList.length)] + wordList[cryptoRand(wordList.length)];
+  let pwd = base;
+  if(memOpts.leet) {
+    pwd = pwd.replace(/a/g,'@').replace(/e/g,'3').replace(/i/g,'!').replace(/o/g,'0').replace(/s/g,'$');
+  }
+  if(memOpts.caps) {
+    pwd = pwd.charAt(0).toUpperCase() + pwd.slice(1);
+  }
+  if(memOpts.mnums) {
+    pwd += Math.floor(cryptoRand(100));
+  }
+  if(memOpts.msyms) {
+    const syms = ['!','@','#','$','%','&'];
+    pwd += syms[cryptoRand(syms.length)];
+  }
+  document.getElementById('pwd-text-memo').textContent = pwd;
+  updateStrengthUI('strength-bars-memo','strength-label-memo',pwd);
+}
+
+function selectPin(n, btn) {
+  pinLen = n;
+  document.querySelectorAll('.pin-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  generatePIN();
+}
+
+function generatePIN() {
+  let digits = [];
+  let attempts = 0;
+  while(digits.length < pinLen && attempts < 1000) {
+    attempts++;
+    const d = cryptoRand(10);
+    if(pinOpts.norepeat && digits.includes(d)) continue;
+    if(pinOpts.noseq && digits.length > 0 && Math.abs(d - digits[digits.length-1]) === 1) continue;
+    digits.push(d);
+  }
+  document.getElementById('pwd-text-pin').textContent = digits.join('');
+}
+
+let phraseWords = [];
+function selectSep(sep, btn) {
+  phraseSep = sep;
+  document.querySelectorAll('.sep-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  generatePassphrase();
+}
+
+function generatePassphrase() {
+  const count = parseInt(document.getElementById('word-count').value);
+  phraseWords = Array.from({length:count}, () => wordList[cryptoRand(wordList.length)]);
+  let words = [...phraseWords];
+  if(phraseOpts.pcap) words = words.map(w=>w.charAt(0).toUpperCase()+w.slice(1));
+  let phrase = words.join(phraseSep);
+  if(phraseOpts.pnum) phrase += phraseSep + (cryptoRand(9000)+1000);
+  document.getElementById('pwd-text-phrase').innerHTML = phraseWords.map(w=>`<span class="passphrase-word">${w}</span>`).join('');
+  const bits = Math.floor(count * Math.log2(wordList.length));
+  document.getElementById('entropy-phrase').textContent = bits;
+  updateStrengthUI('strength-bars-phrase','strength-label-phrase',phrase);
+  document.getElementById('pwd-text-phrase')._plain = phrase;
+}
+
+function generateCustom() {
+  const chars = document.getElementById('custom-chars').value;
+  if(!chars) return;
+  const len = parseInt(document.getElementById('len-custom').value);
+  const pwd = genPass(chars, len);
+  document.getElementById('pwd-text-custom').textContent = pwd;
+}
+
+function copyPass(type) {
+  let text = '';
+  if(type==='strong') text = document.getElementById('pwd-text-strong').textContent;
+  if(type==='memo') text = document.getElementById('pwd-text-memo').textContent;
+  if(type==='pin') text = document.getElementById('pwd-text-pin').textContent;
+  if(type==='phrase') {
+    const el = document.getElementById('pwd-text-phrase');
+    text = el._plain || el.textContent;
+  }
+  if(type==='custom') text = document.getElementById('pwd-text-custom').textContent;
+  copyText(text);
+  const btn = document.getElementById('copy-'+type);
+  btn.textContent='✅';btn.classList.add('copied');
+  setTimeout(()=>{btn.textContent='📋';btn.classList.remove('copied');},1500);
+}
+
+function copyText(text) {
+  if(navigator.clipboard) navigator.clipboard.writeText(text);
+  else { const t=document.createElement('textarea');t.value=text;document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t); }
+  showToast('✅ Copied to clipboard!');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2000);
+}
+
+generateStrong();
+</script>
+</body>
+</html>

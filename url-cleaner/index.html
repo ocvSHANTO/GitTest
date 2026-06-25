@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>URL Cleaner — Privacy Forge</title>
+<style>
+:root{--bg:#0a0e1a;--surface:#111827;--surface2:#1a2235;--border:#1e2d45;--accent:#00d4ff;--accent2:#7c3aed;--success:#10b981;--warning:#f59e0b;--danger:#ef4444;--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;--radius:12px;--shadow:0 4px 24px rgba(0,0,0,0.4)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;min-height:100vh;padding:16px}
+.back-btn{position:fixed;top:16px;left:16px;background:var(--surface2);border:1px solid var(--border);color:var(--text2);padding:8px 14px;border-radius:8px;text-decoration:none;font-size:13px;display:flex;align-items:center;gap:6px;z-index:100}
+.back-btn:hover{color:var(--accent);border-color:var(--accent)}
+.header{text-align:center;padding:32px 0 24px}
+.logo-icon{width:64px;height:64px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:16px;display:inline-flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:12px;box-shadow:0 0 32px rgba(0,212,255,0.3);animation:pulse 3s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 32px rgba(0,212,255,0.3)}50%{box-shadow:0 0 48px rgba(0,212,255,0.6)}}
+h1{font-size:clamp(22px,5vw,32px);font-weight:700}
+.subtitle{color:var(--text2);font-size:14px;margin-top:6px}
+.container{max-width:680px;margin:0 auto}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;box-shadow:var(--shadow)}
+.section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text3);margin-bottom:12px}
+.input{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:10px 12px;font-size:14px;outline:none;transition:border-color 0.2s;font-family:'Inter',monospace}
+.input:focus{border-color:var(--accent)}
+.input::placeholder{color:var(--text3)}
+textarea.input{resize:vertical;min-height:80px;line-height:1.5}
+.btn{padding:12px 20px;border-radius:var(--radius);border:none;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:white;width:100%;box-shadow:0 4px 16px rgba(0,212,255,0.25)}
+.btn-primary:hover{transform:translateY(-1px)}
+.btn-danger{background:linear-gradient(135deg,#ef4444,#dc2626);color:white}
+.btn-secondary{background:var(--surface2);border:1px solid var(--border);color:var(--text2)}
+.btn-secondary:hover{border-color:var(--accent);color:var(--accent)}
+.btn-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.url-result{background:var(--surface2);border:1px solid var(--success);border-radius:8px;padding:14px;font-family:monospace;font-size:13px;word-break:break-all;color:var(--success);margin:12px 0;display:none}
+.url-result.visible{display:block}
+.param-list{list-style:none;display:flex;flex-direction:column;gap:6px}
+.param-item{background:var(--surface2);border-radius:6px;padding:10px 12px;font-size:13px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.param-key{color:var(--text3);font-family:monospace}
+.param-val{color:var(--text);font-family:monospace;word-break:break-all}
+.param-removed{border:1px solid var(--danger);opacity:0.6}
+.param-removed .param-key{text-decoration:line-through;color:var(--danger)}
+.param-kept{border:1px solid var(--success)}
+.badge{display:inline-block;border-radius:4px;padding:2px 8px;font-size:11px;font-weight:700}
+.badge-removed{background:rgba(239,68,68,0.15);color:var(--danger)}
+.badge-kept{background:rgba(16,185,129,0.15);color:var(--success)}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--success);color:white;padding:12px 24px;border-radius:40px;font-size:14px;font-weight:600;transition:transform 0.3s;z-index:999;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.custom-params{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.custom-tag{background:rgba(124,58,237,0.15);border:1px solid var(--accent2);color:var(--accent2);border-radius:20px;padding:4px 10px;font-size:12px;display:flex;align-items:center;gap:6px;cursor:pointer}
+.custom-tag:hover{background:rgba(124,58,237,0.3)}
+.tracking-params-grid{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.tparam{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--text2);font-family:monospace}
+</style>
+</head>
+<body>
+<a href="../index.html" class="back-btn">← Back</a>
+<div class="header">
+  <div class="logo-icon">🔗</div>
+  <h1>URL Cleaner</h1>
+  <p class="subtitle">Remove tracking parameters • Privacy-first link cleaning</p>
+</div>
+
+<div class="container">
+  <div class="card">
+    <div class="section-title">Paste URL to Clean</div>
+    <textarea class="input" id="url-input" rows="4" placeholder="https://example.com?id=1&utm_source=facebook&utm_campaign=sale&fbclid=abc123..." oninput="analyzeURL()"></textarea>
+    <div class="section-title" style="margin-top:14px">Known Tracking Parameters (auto-removed)</div>
+    <div class="tracking-params-grid" id="tracking-display"></div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">Custom Parameters to Remove</div>
+    <div style="display:flex;gap:8px">
+      <input class="input" id="custom-param-input" placeholder="Add parameter name..." style="flex:1" onkeydown="if(event.key==='Enter')addCustomParam()">
+      <button class="btn btn-secondary" onclick="addCustomParam()">+ Add</button>
+    </div>
+    <div class="custom-params" id="custom-params"></div>
+  </div>
+
+  <div class="card" id="analysis-card" style="display:none">
+    <div class="section-title">URL Analysis</div>
+    <div id="param-list" class="param-list"></div>
+    <div class="url-result" id="url-result"></div>
+    <div class="btn-grid">
+      <button class="btn btn-primary" onclick="cleanURL()" style="grid-column:1/-1">🧹 Clean URL</button>
+      <button class="btn btn-secondary" onclick="copyClean()">📋 Copy Clean URL</button>
+      <button class="btn btn-secondary" onclick="openClean()">🌐 Open Clean URL</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">Encode / Decode URL</div>
+    <textarea class="input" id="encode-input" rows="3" placeholder="Paste URL or text to encode/decode..."></textarea>
+    <div class="btn-grid" style="margin-top:10px">
+      <button class="btn btn-secondary" onclick="encodeURL()">🔒 URL Encode</button>
+      <button class="btn btn-secondary" onclick="decodeURL()">🔓 URL Decode</button>
+    </div>
+    <textarea class="input" id="encode-output" rows="3" style="margin-top:10px" readonly placeholder="Result appears here..."></textarea>
+    <button class="btn btn-secondary" style="margin-top:8px;width:100%" onclick="copyEncode()">📋 Copy Result</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const TRACKING_PARAMS = new Set([
+  'utm_source','utm_medium','utm_campaign','utm_term','utm_content','utm_id',
+  'fbclid','gclid','msclkid','twclid','mc_cid','mc_eid','ref','referral',
+  'source','affiliate','partner','campaign','adid','ad_id','adset',
+  '_hsenc','_hsmi','mkt_tok','ysclid','yclid','igshid','s_kwcid',
+  'si','feature','share','nb_klid','dm_i','epik','pk_campaign','pk_source',
+  'at_medium','at_campaign','cmpid','cid','zanpid','spm','hmb_campaign'
+]);
+
+let customParams = new Set();
+let cleanedURL = '';
+
+function updateTrackingDisplay() {
+  const disp = document.getElementById('tracking-display');
+  disp.innerHTML = [...TRACKING_PARAMS].map(p=>`<span class="tparam">${p}</span>`).join('');
+}
+
+function addCustomParam() {
+  const input = document.getElementById('custom-param-input');
+  const val = input.value.trim().toLowerCase();
+  if(!val) return;
+  customParams.add(val);
+  input.value='';
+  renderCustomParams();
+  analyzeURL();
+}
+
+function removeCustomParam(p) {
+  customParams.delete(p);
+  renderCustomParams();
+  analyzeURL();
+}
+
+function renderCustomParams() {
+  const el = document.getElementById('custom-params');
+  el.innerHTML = [...customParams].map(p=>`<div class="custom-tag" onclick="removeCustomParam('${p}')">${p} ×</div>`).join('');
+}
+
+function analyzeURL() {
+  const raw = document.getElementById('url-input').value.trim();
+  if(!raw) { document.getElementById('analysis-card').style.display='none'; return; }
+  
+  let url;
+  try { url = new URL(raw); } catch(e) {
+    document.getElementById('analysis-card').style.display='none'; return;
+  }
+  
+  document.getElementById('analysis-card').style.display='block';
+  const allParams = [...url.searchParams.entries()];
+  const list = document.getElementById('param-list');
+  
+  if(!allParams.length) {
+    list.innerHTML = '<div style="color:var(--text3);font-size:13px;text-align:center;padding:12px">No query parameters found</div>';
+    return;
+  }
+  
+  list.innerHTML = allParams.map(([k,v])=>{
+    const isTracking = TRACKING_PARAMS.has(k.toLowerCase()) || customParams.has(k.toLowerCase());
+    return `<div class="param-item ${isTracking?'param-removed':'param-kept'}">
+      <div>
+        <div class="param-key">${k}</div>
+        <div class="param-val">${v.slice(0,60)+(v.length>60?'...':'')}</div>
+      </div>
+      <span class="badge ${isTracking?'badge-removed':'badge-kept'}">${isTracking?'REMOVE':'KEEP'}</span>
+    </div>`;
+  }).join('');
+}
+
+function cleanURL() {
+  const raw = document.getElementById('url-input').value.trim();
+  try {
+    const url = new URL(raw);
+    const toDelete = [];
+    url.searchParams.forEach((v,k)=>{
+      if(TRACKING_PARAMS.has(k.toLowerCase()) || customParams.has(k.toLowerCase())) toDelete.push(k);
+    });
+    toDelete.forEach(k=>url.searchParams.delete(k));
+    // Remove empty search
+    let result = url.toString();
+    if(url.searchParams.toString()==='') result = result.replace('?','');
+    cleanedURL = result;
+    const el = document.getElementById('url-result');
+    el.textContent = result;
+    el.classList.add('visible');
+    showToast(`✅ Removed ${toDelete.length} tracking params`);
+  } catch(e) { showToast('⚠️ Invalid URL'); }
+}
+
+function copyClean() {
+  if(!cleanedURL){cleanURL();}
+  if(!cleanedURL) return;
+  navigator.clipboard.writeText(cleanedURL);
+  showToast('📋 Clean URL copied!');
+}
+
+function openClean() {
+  if(!cleanedURL){cleanURL();}
+  if(cleanedURL) window.open(cleanedURL,'_blank');
+}
+
+function encodeURL() {
+  const v = document.getElementById('encode-input').value;
+  document.getElementById('encode-output').value = encodeURIComponent(v);
+}
+
+function decodeURL() {
+  const v = document.getElementById('encode-input').value;
+  try { document.getElementById('encode-output').value = decodeURIComponent(v); }
+  catch(e) { document.getElementById('encode-output').value = 'Invalid encoded string'; }
+}
+
+function copyEncode() {
+  const v = document.getElementById('encode-output').value;
+  if(v) { navigator.clipboard.writeText(v); showToast('📋 Copied!'); }
+}
+
+function showToast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+updateTrackingDisplay();
+</script>
+</body>
+</html>

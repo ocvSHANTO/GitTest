@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>File Inspector — Privacy Forge</title>
+<style>
+:root{--bg:#0a0e1a;--surface:#111827;--surface2:#1a2235;--border:#1e2d45;--accent:#00d4ff;--accent2:#7c3aed;--success:#10b981;--warning:#f59e0b;--danger:#ef4444;--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;--radius:12px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;min-height:100vh;padding:16px}
+.back-btn{position:fixed;top:16px;left:16px;background:var(--surface2);border:1px solid var(--border);color:var(--text2);padding:8px 14px;border-radius:8px;text-decoration:none;font-size:13px;z-index:100}
+.back-btn:hover{color:var(--accent);border-color:var(--accent)}
+.header{text-align:center;padding:32px 0 24px}
+.logo-icon{width:64px;height:64px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:16px;display:inline-flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:12px;box-shadow:0 0 32px rgba(0,212,255,0.3);animation:pulse 3s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 32px rgba(0,212,255,0.3)}50%{box-shadow:0 0 48px rgba(0,212,255,0.6)}}
+h1{font-size:clamp(22px,5vw,32px);font-weight:700}
+.subtitle{color:var(--text2);font-size:14px;margin-top:6px}
+.container{max-width:700px;margin:0 auto}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;box-shadow:0 4px 24px rgba(0,0,0,0.4)}
+.section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text3);margin-bottom:12px}
+.tabs{display:flex;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:4px;margin:0 auto 24px;max-width:700px;gap:4px;overflow-x:auto}
+.tab{flex:1;padding:10px 6px;border-radius:8px;border:none;background:transparent;color:var(--text2);font-size:11px;cursor:pointer;transition:all 0.2s;font-weight:600;white-space:nowrap}
+.tab.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:white}
+.tab-content{display:none}.tab-content.active{display:block}
+.drop-zone{border:2px dashed var(--border);border-radius:var(--radius);padding:36px;text-align:center;cursor:pointer;transition:all 0.3s;position:relative}
+.drop-zone:hover{border-color:var(--accent);background:rgba(0,212,255,0.04)}
+.file-input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.drop-icon{font-size:44px;margin-bottom:10px;display:block}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.info-item{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px}
+.info-label{font-size:11px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;font-weight:600}
+.info-val{font-size:14px;color:var(--text);font-weight:600;word-break:break-all}
+.info-val.mono{font-family:'Courier New',monospace;font-size:12px}
+.btn{padding:10px 16px;border-radius:8px;border:none;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:white}
+.btn-secondary{background:var(--surface2);border:1px solid var(--border);color:var(--text2)}
+.btn-secondary:hover{border-color:var(--accent);color:var(--accent)}
+.btn-danger{background:rgba(239,68,68,0.1);border:1px solid var(--danger);color:var(--danger)}
+.btn-danger:hover{background:rgba(239,68,68,0.2)}
+.perm-row{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.perm-name{font-size:13px;font-weight:500;display:flex;align-items:center;gap:8px}
+.perm-icon{font-size:16px}
+.status-badge{padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700}
+.status-ok{background:rgba(16,185,129,0.15);color:var(--success);border:1px solid rgba(16,185,129,0.3)}
+.status-warn{background:rgba(245,158,11,0.15);color:var(--warning);border:1px solid rgba(245,158,11,0.3)}
+.status-bad{background:rgba(239,68,68,0.15);color:var(--danger);border:1px solid rgba(239,68,68,0.3)}
+.status-unknown{background:rgba(100,116,139,0.15);color:var(--text3);border:1px solid rgba(100,116,139,0.3)}
+.privacy-score{text-align:center;padding:24px}
+.score-ring{width:120px;height:120px;border-radius:50%;border:6px solid var(--border);display:inline-flex;align-items:center;justify-content:center;flex-direction:column;margin-bottom:12px;position:relative}
+.score-num{font-size:36px;font-weight:700}
+.score-label{font-size:12px;color:var(--text2)}
+textarea.input{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:12px;font-size:13px;outline:none;resize:vertical;line-height:1.6;font-family:'Courier New',monospace;min-height:140px}
+textarea.input:focus{border-color:var(--accent)}
+textarea.input::placeholder{color:var(--text3);font-family:'Inter',sans-serif}
+.clean-opts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+.clean-opt{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;display:flex;align-items:center;gap:8px;cursor:pointer;transition:all 0.2s}
+.clean-opt:hover{border-color:var(--accent)}
+.clean-opt.on{border-color:var(--success);background:rgba(16,185,129,0.05)}
+.clean-opt input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px}
+.clean-title{font-size:12px;font-weight:600}
+.clean-desc{font-size:11px;color:var(--text3)}
+.stats-bar{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;display:flex;flex-wrap:wrap;gap:12px;margin:10px 0}
+.stat{font-size:12px;color:var(--text2)}
+.stat span{color:var(--accent);font-weight:600}
+.diff-view{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.diff-pane{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px}
+.diff-label{font-size:10px;text-transform:uppercase;font-weight:600;color:var(--text3);margin-bottom:6px}
+.diff-text{font-size:12px;line-height:1.6;white-space:pre-wrap;word-break:break-all;max-height:200px;overflow-y:auto;font-family:'Courier New',monospace}
+.removed-highlight{background:rgba(239,68,68,0.2);text-decoration:line-through;color:var(--danger)}
+.storage-item{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px}
+.storage-name{font-size:13px;font-weight:600;margin-bottom:4px}
+.storage-val{font-size:12px;color:var(--text3);font-family:monospace;word-break:break-all}
+.hex-preview{font-family:'Courier New',monospace;font-size:11px;color:var(--text3);margin-top:8px;line-height:1.8;word-break:break-all}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--success);color:white;padding:12px 24px;border-radius:40px;font-size:14px;font-weight:600;transition:transform 0.3s;z-index:999;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.file-type-icon{font-size:40px;margin-bottom:8px;display:block;text-align:center}
+</style>
+</head>
+<body>
+<a href="../index.html" class="back-btn">← Back</a>
+<div class="header">
+  <div class="logo-icon">📂</div>
+  <h1>File Inspector</h1>
+  <p class="subtitle">Inspect files • Browser privacy • Clean text data</p>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('inspector',this)">📂 File Inspector</button>
+  <button class="tab" onclick="switchTab('browser',this)">🌐 Browser Privacy</button>
+  <button class="tab" onclick="switchTab('cleaner',this)">🧹 Data Cleaner</button>
+  <button class="tab" onclick="switchTab('clipboard',this)">📋 Clipboard</button>
+</div>
+
+<div class="container">
+
+<!-- FILE INSPECTOR TAB -->
+<div id="tab-inspector" class="tab-content active">
+  <div class="card">
+    <div class="drop-zone" id="inspect-drop">
+      <input type="file" class="file-input" id="inspect-file" onchange="inspectFile(this)">
+      <span class="drop-icon">📂</span>
+      <div style="font-size:15px;font-weight:600;margin-bottom:4px">Drop any file to inspect</div>
+      <div style="font-size:13px;color:var(--text2)">Size • Type • MIME • Magic Bytes • Hash — All local</div>
+    </div>
+  </div>
+
+  <div id="inspect-result" style="display:none">
+    <div class="card">
+      <div id="file-type-icon" class="file-type-icon">📄</div>
+      <div class="info-grid">
+        <div class="info-item"><div class="info-label">File Name</div><div class="info-val" id="fi-name">—</div></div>
+        <div class="info-item"><div class="info-label">File Size</div><div class="info-val" id="fi-size">—</div></div>
+        <div class="info-item"><div class="info-label">MIME Type</div><div class="info-val" id="fi-mime">—</div></div>
+        <div class="info-item"><div class="info-label">Extension</div><div class="info-val" id="fi-ext">—</div></div>
+        <div class="info-item"><div class="info-label">Last Modified</div><div class="info-val" id="fi-mod">—</div></div>
+        <div class="info-item"><div class="info-label">Magic Bytes</div><div class="info-val mono" id="fi-magic">—</div></div>
+        <div class="info-item" style="grid-column:1/-1"><div class="info-label">SHA-256 Hash</div><div class="info-val mono" id="fi-hash">Computing...</div></div>
+        <div class="info-item" style="grid-column:1/-1"><div class="info-label">Hex Preview (first 64 bytes)</div><div class="hex-preview" id="fi-hex">—</div></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+        <button class="btn btn-secondary" onclick="copyFileInfo()">📋 Copy Info</button>
+        <button class="btn btn-secondary" onclick="exportFileReport()">📄 Export Report</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BROWSER PRIVACY TAB -->
+<div id="tab-browser" class="tab-content">
+  <div class="card">
+    <div class="privacy-score">
+      <div class="score-ring" id="score-ring" style="border-color:var(--text3)">
+        <span class="score-num" id="score-num">—</span>
+        <span class="score-label">/ 100</span>
+      </div>
+      <div style="font-weight:600;font-size:16px" id="score-text">Running check...</div>
+    </div>
+    <button class="btn btn-primary" style="width:100%" onclick="runPrivacyCheck()">🔄 Run Privacy Check</button>
+  </div>
+
+  <div class="card" id="privacy-results">
+    <div class="section-title">Browser Privacy Report</div>
+    <div id="perm-list"></div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">Storage Report</div>
+    <div id="storage-report"></div>
+    <button class="btn btn-danger" style="margin-top:12px" onclick="clearAllStorage()">🗑 Clear All Browser Storage</button>
+  </div>
+</div>
+
+<!-- DATA CLEANER TAB -->
+<div id="tab-cleaner" class="tab-content">
+  <div class="card">
+    <div class="section-title">Input Text</div>
+    <textarea class="input" id="cleaner-input" placeholder="Paste text with issues — duplicates, hidden chars, extra spaces, empty lines...&#10;&#10;Line 1&#10;Line 1&#10;Line 2  &#10;&#10;&#10;Line 3" oninput="analyzeText()"></textarea>
+    <div class="stats-bar" id="input-stats">
+      <div class="stat">Lines: <span id="stat-lines">0</span></div>
+      <div class="stat">Words: <span id="stat-words">0</span></div>
+      <div class="stat">Chars: <span id="stat-chars">0</span></div>
+      <div class="stat">Bytes: <span id="stat-bytes">0</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">Cleaning Options</div>
+    <div class="clean-opts">
+      <label class="clean-opt on"><input type="checkbox" checked id="opt-dupes"> <div><div class="clean-title">Remove Duplicates</div><div class="clean-desc">Identical lines</div></div></label>
+      <label class="clean-opt on"><input type="checkbox" checked id="opt-empty"> <div><div class="clean-title">Remove Empty Lines</div><div class="clean-desc">Blank/whitespace-only</div></div></label>
+      <label class="clean-opt on"><input type="checkbox" checked id="opt-spaces"> <div><div class="clean-title">Trim Extra Spaces</div><div class="clean-desc">Leading & trailing</div></div></label>
+      <label class="clean-opt on"><input type="checkbox" checked id="opt-zwsp"> <div><div class="clean-title">Remove Zero-Width</div><div class="clean-desc">​Invisible chars</div></div></label>
+      <label class="clean-opt"><input type="checkbox" id="opt-unicode"> <div><div class="clean-title">Normalize Unicode</div><div class="clean-desc">NFC normalization</div></div></label>
+      <label class="clean-opt"><input type="checkbox" id="opt-sort"> <div><div class="clean-title">Sort Lines</div><div class="clean-desc">Alphabetically</div></div></label>
+      <label class="clean-opt"><input type="checkbox" id="opt-lower"> <div><div class="clean-title">Lowercase</div><div class="clean-desc">All text</div></div></label>
+      <label class="clean-opt"><input type="checkbox" id="opt-punct"> <div><div class="clean-title">Remove Punctuation</div><div class="clean-desc">.,!?;:"'</div></div></label>
+    </div>
+    <button class="btn btn-primary" style="width:100%" onclick="cleanText()">🧹 Clean Text</button>
+  </div>
+
+  <div id="clean-result-card" class="card" style="display:none">
+    <div class="section-title">Cleaned Result</div>
+    <div class="stats-bar" id="clean-stats"></div>
+    <div class="diff-view">
+      <div class="diff-pane">
+        <div class="diff-label">Before</div>
+        <div class="diff-text" id="diff-before"></div>
+      </div>
+      <div class="diff-pane">
+        <div class="diff-label">After</div>
+        <div class="diff-text" id="diff-after" style="color:var(--success)"></div>
+      </div>
+    </div>
+    <textarea class="input" id="clean-output" rows="8" style="margin-top:10px" readonly></textarea>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+      <button class="btn btn-secondary" onclick="copyClean()">📋 Copy Clean Text</button>
+      <button class="btn btn-secondary" onclick="downloadClean()">⬇️ Download</button>
+      <button class="btn btn-secondary" onclick="useCleanAsInput()">↩ Use as Input</button>
+    </div>
+  </div>
+</div>
+
+<!-- CLIPBOARD TAB -->
+<div id="tab-clipboard" class="tab-content">
+  <div class="card">
+    <div class="section-title">Clipboard Manager</div>
+    <div style="display:grid;gap:10px">
+      <button class="btn btn-primary" onclick="readClipboard()" style="width:100%">📥 Read Clipboard</button>
+      <div class="perm-row">
+        <div class="perm-name"><span class="perm-icon">📋</span>Clipboard Content</div>
+        <div id="clip-status" class="status-badge status-unknown">Not read</div>
+      </div>
+      <textarea class="input" id="clip-content" rows="6" placeholder="Clipboard content will appear here..." readonly></textarea>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
+      <button class="btn btn-secondary" onclick="analyzeClipboard()">🔍 Analyze</button>
+      <button class="btn btn-danger" onclick="clearClipboard()">🗑 Clear Clipboard</button>
+    </div>
+    <div id="clip-analysis" style="margin-top:12px;display:none">
+      <div class="stats-bar" id="clip-stats"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">Safe Copy</div>
+    <textarea class="input" id="safe-copy-input" rows="4" placeholder="Type text to copy safely (strips hidden chars)..."></textarea>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn btn-primary" onclick="safeCopy()" style="flex:1">🔒 Safe Copy</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('safe-copy-input').value=''">🗑 Clear</button>
+    </div>
+  </div>
+</div>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+function switchTab(id,btn){
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+  if(id==='browser')runPrivacyCheck();
+}
+
+// FILE INSPECTOR
+const MIME_ICONS={'image':'🖼️','video':'🎬','audio':'🎵','text':'📄','application/pdf':'📕','application/zip':'🗜️','application/json':'📋','application/xml':'📋','font':'🔤','default':'📦'};
+const MAGIC_SIGS={
+  '89504E47':'PNG Image','FFD8FF':'JPEG Image','47494638':'GIF Image','25504446':'PDF Document',
+  '504B0304':'ZIP Archive','526172211A07':'RAR Archive','377ABCAF271C':'7-Zip','1F8B':'GZip',
+  '000001BA':'MPEG Video','000001B3':'MPEG Video','1A45DFA3':'WebM/MKV',
+  '664C6143':'FLAC Audio','494433':'MP3 Audio','4F676753':'OGG',
+  '4D5A':'Windows Executable','7F454C46':'ELF Linux Binary','CAFEBABE':'Java Class',
+  '3C3F786D6C':'XML','3C21444F43':'HTML'
+};
+
+function getMagicType(hex){
+  for(const[sig,name]of Object.entries(MAGIC_SIGS)){
+    if(hex.toUpperCase().startsWith(sig))return name;
+  }
+  return null;
+}
+
+function formatSize(b){if(b<1024)return b+' B';if(b<1048576)return(b/1024).toFixed(2)+' KB';if(b<1073741824)return(b/1048576).toFixed(2)+' MB';return(b/1073741824).toFixed(2)+' GB';}
+
+async function inspectFile(input){
+  const file=input.files[0];
+  if(!file)return;
+  document.getElementById('inspect-result').style.display='block';
+  const ext=file.name.includes('.')?'.'+file.name.split('.').pop().toUpperCase():'None';
+  const type=file.type||'Unknown';
+  const icon=Object.entries(MIME_ICONS).find(([k])=>type.startsWith(k))?.[1]||MIME_ICONS.default;
+  document.getElementById('file-type-icon').textContent=icon;
+  document.getElementById('fi-name').textContent=file.name;
+  document.getElementById('fi-size').textContent=formatSize(file.size)+' ('+file.size.toLocaleString()+' bytes)';
+  document.getElementById('fi-mime').textContent=type;
+  document.getElementById('fi-ext').textContent=ext;
+  document.getElementById('fi-mod').textContent=new Date(file.lastModified).toLocaleString();
+  const buf=await file.arrayBuffer();
+  const bytes=new Uint8Array(buf);
+  const hexStr=Array.from(bytes.slice(0,16)).map(b=>b.toString(16).padStart(2,'0').toUpperCase()).join('');
+  document.getElementById('fi-magic').textContent=hexStr.match(/.{2}/g).join(' ')+ ' → '+(getMagicType(hexStr)||'Unknown');
+  const hexPreview=Array.from(bytes.slice(0,64)).map(b=>b.toString(16).padStart(2,'0').toUpperCase()).join(' ');
+  document.getElementById('fi-hex').textContent=hexPreview;
+  const hashBuf=await crypto.subtle.digest('SHA-256',buf);
+  const hash=Array.from(new Uint8Array(hashBuf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+  document.getElementById('fi-hash').textContent=hash;
+}
+
+function copyFileInfo(){
+  const fields=['fi-name','fi-size','fi-mime','fi-ext','fi-mod','fi-magic','fi-hash'];
+  const labels=['Name','Size','MIME','Extension','Modified','Magic Bytes','SHA-256'];
+  const text=fields.map((id,i)=>`${labels[i]}: ${document.getElementById(id).textContent}`).join('\n');
+  navigator.clipboard.writeText(text);
+  showToast('📋 File info copied!');
+}
+
+function exportFileReport(){
+  const content=`Privacy Forge — File Inspection Report\nGenerated: ${new Date().toLocaleString()}\n\n`+
+    ['fi-name','fi-size','fi-mime','fi-ext','fi-mod','fi-magic','fi-hash'].map((id,i)=>
+    ['Name','Size','MIME','Extension','Modified','Magic Bytes','SHA-256'][i]+': '+document.getElementById(id).textContent).join('\n')+
+    '\n\nHex Preview:\n'+document.getElementById('fi-hex').textContent;
+  const blob=new Blob([content],{type:'text/plain'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='file-report.txt';a.click();
+  showToast('📄 Report downloaded!');
+}
+
+// BROWSER PRIVACY CHECK
+async function runPrivacyCheck(){
+  const checks=[];
+  let score=100;
+
+  // Cookies
+  const cookiesOk=navigator.cookieEnabled;
+  checks.push({icon:'🍪',name:'Cookies',desc:'Can store tracking cookies',status:cookiesOk?'warn':'ok',text:cookiesOk?'Enabled':'Disabled'});
+  if(cookiesOk)score-=10;
+
+  // Do Not Track
+  const dnt=navigator.doNotTrack;
+  const dntOn=dnt==='1'||dnt==='yes';
+  checks.push({icon:'🚫',name:'Do Not Track',desc:'Browser DNT signal',status:dntOn?'ok':'warn',text:dntOn?'Enabled':'Not Set'});
+  if(!dntOn)score-=10;
+
+  // Local Storage
+  let lsEnabled=false;
+  try{localStorage.setItem('_test','1');localStorage.removeItem('_test');lsEnabled=true;}catch{}
+  checks.push({icon:'💾',name:'Local Storage',desc:'Persistent client-side storage',status:lsEnabled?'warn':'ok',text:lsEnabled?'Enabled':'Disabled'});
+  if(lsEnabled)score-=5;
+
+  // Session Storage
+  let ssEnabled=false;
+  try{sessionStorage.setItem('_test','1');sessionStorage.removeItem('_test');ssEnabled=true;}catch{}
+  checks.push({icon:'⏱',name:'Session Storage',desc:'Session-scoped storage',status:ssEnabled?'warn':'ok',text:ssEnabled?'Enabled':'Disabled'});
+
+  // IndexedDB
+  const idbOk=!!window.indexedDB;
+  checks.push({icon:'🗄',name:'IndexedDB',desc:'Advanced client database',status:idbOk?'warn':'ok',text:idbOk?'Available':'Unavailable'});
+
+  // WebRTC IP leak
+  checks.push({icon:'📡',name:'WebRTC',desc:'May leak local IP addresses',status:'warn',text:window.RTCPeerConnection?'Available':'Unavailable'});
+  if(window.RTCPeerConnection)score-=10;
+
+  // Geolocation
+  const geoOk=!!navigator.geolocation;
+  checks.push({icon:'📍',name:'Geolocation',desc:'Location access API',status:geoOk?'warn':'ok',text:geoOk?'Available':'Unavailable'});
+
+  // Camera/Mic
+  const mediaOk=!!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia);
+  checks.push({icon:'📷',name:'Camera/Mic API',desc:'Media device access',status:mediaOk?'warn':'ok',text:mediaOk?'Available':'Unavailable'});
+
+  // Notifications
+  const notifOk='Notification' in window;
+  const notifPerm=notifOk?Notification.permission:'N/A';
+  checks.push({icon:'🔔',name:'Notifications',desc:'Push notification access',status:notifPerm==='granted'?'warn':'ok',text:notifOk?notifPerm:'Unavailable'});
+
+  // Clipboard
+  const clipOk=!!(navigator.clipboard);
+  checks.push({icon:'📋',name:'Clipboard API',desc:'Read clipboard access',status:'unknown',text:clipOk?'Available':'Unavailable'});
+
+  // Service Workers
+  const swOk='serviceWorker' in navigator;
+  checks.push({icon:'⚙️',name:'Service Workers',desc:'Offline/background processing',status:'unknown',text:swOk?'Supported':'Unsupported'});
+
+  // User Agent
+  checks.push({icon:'🖥',name:'User Agent',desc:'Browser fingerprint data',status:'warn',text:navigator.userAgent.slice(0,50)+'...'});
+  score-=5;
+
+  // Timezone
+  checks.push({icon:'🕐',name:'Timezone',desc:'Can be used for fingerprinting',status:'warn',text:Intl.DateTimeFormat().resolvedOptions().timeZone});
+  score-=5;
+
+  // Language
+  checks.push({icon:'🌍',name:'Language',desc:'Browser language setting',status:'warn',text:navigator.language||'Unknown'});
+
+  // Screen
+  checks.push({icon:'📐',name:'Screen Resolution',desc:'Fingerprinting data point',status:'warn',text:`${screen.width}×${screen.height} @ ${window.devicePixelRatio}x`});
+  score-=5;
+
+  score=Math.max(0,score);
+  const scoreEl=document.getElementById('score-num');
+  scoreEl.textContent=score;
+  const ring=document.getElementById('score-ring');
+  ring.style.borderColor=score>=80?'var(--success)':score>=50?'var(--warning)':'var(--danger)';
+  scoreEl.style.color=score>=80?'var(--success)':score>=50?'var(--warning)':'var(--danger)';
+  document.getElementById('score-text').textContent=score>=80?'Good Privacy':score>=50?'Moderate Privacy':'Privacy At Risk';
+
+  const list=document.getElementById('perm-list');
+  list.innerHTML=checks.map(c=>`
+    <div class="perm-row">
+      <div class="perm-name"><span class="perm-icon">${c.icon}</span><div><div>${c.name}</div><div style="font-size:11px;color:var(--text3)">${c.desc}</div></div></div>
+      <span class="status-badge status-${c.status}" title="${c.text}">${c.text.length>20?c.text.slice(0,20)+'…':c.text}</span>
+    </div>`).join('');
+
+  // Storage report
+  const storageReport=document.getElementById('storage-report');
+  const lsItems=[];
+  try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);lsItems.push({k,v:localStorage.getItem(k)});}}catch{}
+  const ssItems=[];
+  try{for(let i=0;i<sessionStorage.length;i++){const k=sessionStorage.key(i);ssItems.push({k,v:sessionStorage.getItem(k)});}}catch{}
+  storageReport.innerHTML=`
+    <div class="storage-item"><div class="storage-name">Local Storage (<span style="color:var(--accent)">${lsItems.length}</span> items)</div>${lsItems.slice(0,5).map(i=>`<div class="storage-val">${i.k}: ${(i.v||'').slice(0,60)}</div>`).join('')||'<div class="storage-val">Empty</div>'}</div>
+    <div class="storage-item"><div class="storage-name">Session Storage (<span style="color:var(--accent)">${ssItems.length}</span> items)</div>${ssItems.slice(0,5).map(i=>`<div class="storage-val">${i.k}: ${(i.v||'').slice(0,60)}</div>`).join('')||'<div class="storage-val">Empty</div>'}</div>`;
+}
+
+function clearAllStorage(){
+  if(!confirm('Clear all browser storage? This cannot be undone.'))return;
+  try{localStorage.clear();}catch{}
+  try{sessionStorage.clear();}catch{}
+  showToast('🗑 Storage cleared!');
+  runPrivacyCheck();
+}
+
+// DATA CLEANER
+function analyzeText(){
+  const text=document.getElementById('cleaner-input').value;
+  const lines=text.split('\n');
+  const words=text.trim()?text.trim().split(/\s+/).length:0;
+  document.getElementById('stat-lines').textContent=lines.length;
+  document.getElementById('stat-words').textContent=words;
+  document.getElementById('stat-chars').textContent=text.length;
+  document.getElementById('stat-bytes').textContent=new Blob([text]).size;
+}
+
+function cleanText(){
+  let text=document.getElementById('cleaner-input').value;
+  const orig=text;
+  if(document.getElementById('opt-zwsp').checked){
+    text=text.replace(/[\u200B\u200C\u200D\u200E\u200F\uFEFF\u00AD\u2028\u2029]/g,'');
+  }
+  if(document.getElementById('opt-spaces').checked){
+    text=text.split('\n').map(l=>l.trim()).join('\n');
+    text=text.replace(/[ \t]+/g,' ');
+  }
+  if(document.getElementById('opt-empty').checked){
+    text=text.split('\n').filter(l=>l.trim()).join('\n');
+  }
+  if(document.getElementById('opt-dupes').checked){
+    const seen=new Set();
+    text=text.split('\n').filter(l=>{if(seen.has(l))return false;seen.add(l);return true;}).join('\n');
+  }
+  if(document.getElementById('opt-unicode').checked)text=text.normalize('NFC');
+  if(document.getElementById('opt-lower').checked)text=text.toLowerCase();
+  if(document.getElementById('opt-punct').checked)text=text.replace(/[.,!?;:"'`~@#$%^&*()+=\[\]{}|<>]/g,'');
+  if(document.getElementById('opt-sort').checked)text=text.split('\n').sort((a,b)=>a.localeCompare(b)).join('\n');
+
+  document.getElementById('clean-output').value=text;
+  document.getElementById('clean-result-card').style.display='block';
+  const origLines=orig.split('\n').length,cleanLines=text.split('\n').length;
+  document.getElementById('clean-stats').innerHTML=`
+    <div class="stat">Lines: <span>${origLines}→${cleanLines}</span></div>
+    <div class="stat">Chars: <span>${orig.length}→${text.length}</span></div>
+    <div class="stat">Removed: <span>${orig.length-text.length}</span> chars</div>`;
+  document.getElementById('diff-before').textContent=orig.slice(0,500)+(orig.length>500?'...':'');
+  document.getElementById('diff-after').textContent=text.slice(0,500)+(text.length>500?'...':'');
+  showToast('✅ Text cleaned!');
+}
+
+function copyClean(){navigator.clipboard.writeText(document.getElementById('clean-output').value);showToast('📋 Copied!');}
+function downloadClean(){
+  const blob=new Blob([document.getElementById('clean-output').value],{type:'text/plain'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='cleaned-text.txt';a.click();
+  showToast('⬇️ Downloaded!');
+}
+function useCleanAsInput(){
+  document.getElementById('cleaner-input').value=document.getElementById('clean-output').value;
+  analyzeText();
+  document.getElementById('clean-result-card').style.display='none';
+}
+
+// CLIPBOARD
+async function readClipboard(){
+  try{
+    const text=await navigator.clipboard.readText();
+    document.getElementById('clip-content').value=text;
+    document.getElementById('clip-status').textContent='Read ✅';
+    document.getElementById('clip-status').className='status-badge status-ok';
+    analyzeClipboard();
+  }catch(e){
+    document.getElementById('clip-status').textContent='Denied ❌';
+    document.getElementById('clip-status').className='status-badge status-bad';
+    showToast('⚠️ Clipboard permission denied');
+  }
+}
+
+function analyzeClipboard(){
+  const text=document.getElementById('clip-content').value;
+  if(!text)return;
+  document.getElementById('clip-analysis').style.display='block';
+  const hasEmail=/[\w.-]+@[\w.-]+\.\w+/.test(text);
+  const hasPhone=/(\+?[\d\s\-()]{7,15})/.test(text);
+  const hasURL=/https?:\/\//.test(text);
+  const hasCard=/\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/.test(text);
+  document.getElementById('clip-stats').innerHTML=`
+    <div class="stat">Length: <span>${text.length}</span></div>
+    <div class="stat">Lines: <span>${text.split('\n').length}</span></div>
+    ${hasEmail?'<div class="stat" style="color:var(--warning)">⚠️ Email detected</div>':''}
+    ${hasPhone?'<div class="stat" style="color:var(--warning)">⚠️ Phone detected</div>':''}
+    ${hasURL?'<div class="stat" style="color:var(--accent)">🔗 URL detected</div>':''}
+    ${hasCard?'<div class="stat" style="color:var(--danger)">🚨 Card number pattern!</div>':''}`;
+}
+
+async function clearClipboard(){
+  try{await navigator.clipboard.writeText('');document.getElementById('clip-content').value='';showToast('🗑 Clipboard cleared!');}
+  catch{showToast('⚠️ Could not clear clipboard');}
+}
+
+function safeCopy(){
+  const text=document.getElementById('safe-copy-input').value;
+  const safe=text.replace(/[\u200B\u200C\u200D\u200E\u200F\uFEFF\u00AD\u2028\u2029]/g,'').trim();
+  navigator.clipboard.writeText(safe);
+  showToast('🔒 Safely copied!');
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// Init
+const inspDrop=document.getElementById('inspect-drop');
+inspDrop.addEventListener('dragover',e=>{e.preventDefault();inspDrop.style.borderColor='var(--accent)'});
+inspDrop.addEventListener('dragleave',()=>inspDrop.style.borderColor='');
+inspDrop.addEventListener('drop',e=>{
+  e.preventDefault();inspDrop.style.borderColor='';
+  const dt=new DataTransfer();Array.from(e.dataTransfer.files).forEach(f=>dt.items.add(f));
+  document.getElementById('inspect-file').files=dt.files;inspectFile(document.getElementById('inspect-file'));
+});
+
+runPrivacyCheck();
+</script>
+</body>
+</html>
